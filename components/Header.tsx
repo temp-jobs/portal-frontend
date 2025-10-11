@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AppBar,
   Toolbar,
@@ -18,8 +19,9 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useAuthContext } from '../contexts/AuthContext';
+import FullPageLoader from './FullPageLoader'; // ✅ Import your loader component
 
-// Hide AppBar when scrolling down (like Upwork)
+// Hide AppBar when scrolling down
 function HideOnScroll({ children }: { children: React.ReactElement }) {
   const trigger = useScrollTrigger();
   return (
@@ -31,12 +33,13 @@ function HideOnScroll({ children }: { children: React.ReactElement }) {
 
 export default function Header() {
   const { user, logout } = useAuthContext();
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [profileAnchorEl, setProfileAnchorEl] = React.useState<null | HTMLElement>(null);
+  const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null);
+  const [loading, setLoading] = useState(false); // ✅ Loader state
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
-
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
     setProfileAnchorEl(event.currentTarget);
   const handleProfileMenuClose = () => setProfileAnchorEl(null);
@@ -44,248 +47,259 @@ export default function Header() {
   const isJobseeker = user?.role === 'jobseeker';
   const isEmployer = user?.role === 'employer';
 
-  // ✅ Prepare menu items (to prevent hydration mismatch)
-  const mobileMenuItems = React.useMemo(() => {
-    const items: React.ReactNode[] = [];
-
-    if (user) {
-      if (isJobseeker) {
-        items.push(
-          <MenuItem key="jobs" component={Link} href="/jobs" onClick={handleMenuClose}>
-            Find Jobs
-          </MenuItem>,
-          <MenuItem key="profile" component={Link} href="/profile" onClick={handleMenuClose}>
-            Profile
-          </MenuItem>,
-          <Divider key="divider1" />,
-          <MenuItem
-            key="logout"
-            onClick={() => {
-              logout();
-              handleMenuClose();
-            }}
-          >
-            Logout
-          </MenuItem>
-        );
-      } else if (isEmployer) {
-        items.push(
-          <MenuItem key="post" component={Link} href="/post-job" onClick={handleMenuClose}>
-            Post Job
-          </MenuItem>,
-          <MenuItem key="profile" component={Link} href="/profile" onClick={handleMenuClose}>
-            Profile
-          </MenuItem>,
-          <Divider key="divider1" />,
-          <MenuItem
-            key="logout"
-            onClick={() => {
-              logout();
-              handleMenuClose();
-            }}
-          >
-            Logout
-          </MenuItem>
-        );
-      }
-    } else {
-      items.push(
-        <MenuItem key="login" component={Link} href="/login" onClick={handleMenuClose}>
-          Login
-        </MenuItem>,
-        <MenuItem key="register" component={Link} href="/register" onClick={handleMenuClose}>
-          Sign Up
-        </MenuItem>
-      );
-    }
-
-    return items;
-  }, [user, isJobseeker, isEmployer, logout]);
+  // ✅ Universal navigation handler with loader
+  const navigateWithLoader = async (path: string) => {
+    // setLoading(true);
+    // await new Promise((resolve) => setTimeout(resolve, 100)); // tiny UX delay
+    router.push(path);
+    // setTimeout(() => setLoading(false), 1000); // fallback hide loader
+  };
 
   return (
-    <HideOnScroll>
-      <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{
-          bgcolor: 'background.paper',
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
-        <Toolbar
+    <>
+      {loading && <FullPageLoader message="Loading..." />} {/* ✅ Loader visible when navigating */}
+
+      <HideOnScroll>
+        <AppBar
+          position="sticky"
+          elevation={0}
           sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            minHeight: 70,
-            px: { xs: 2, md: 6 },
+            bgcolor: 'background.paper',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            zIndex: 1100,
           }}
         >
-          {/* Logo */}
-          <Typography
-            variant="h6"
-            component={Link}
-            href="/"
+          <Toolbar
             sx={{
-              fontWeight: 700,
-              color: 'primary.main',
-              textDecoration: 'none',
-              fontSize: '1.5rem',
-              letterSpacing: '-0.02em',
-              '&:hover': { opacity: 0.8 },
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              minHeight: 70,
+              px: { xs: 2, md: 6 },
             }}
           >
-            Part Time Match
-          </Typography>
-
-          {/* Desktop Menu */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
-            {user ? (
-              <>
-                {isJobseeker && (
-                  <>
-                    <Button
-                      component={Link}
-                      href="/jobs"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.primary',
-                        '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                      }}
-                    >
-                      Find Jobs
-                    </Button>
-                    <Button
-                      component={Link}
-                      href="/profile/jobseeker"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.primary',
-                        '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                      }}
-                    >
-                      Profile
-                    </Button>
-                  </>
-                )}
-
-                {isEmployer && (
-                  <>
-                    <Button
-                      component={Link}
-                      href="/post-job"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.primary',
-                        '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                      }}
-                    >
-                      Post Job
-                    </Button>
-                    <Button
-                      component={Link}
-                      href="/profile/employer"
-                      sx={{
-                        fontWeight: 600,
-                        color: 'text.primary',
-                        '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                      }}
-                    >
-                      Profile
-                    </Button>
-                  </>
-                )}
-
-                {/* Avatar dropdown */}
-                <Avatar
-                  alt={user.name || 'User'}
-                  src={user.avatarUrl || ''}
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    ml: 1,
-                    cursor: 'pointer',
-                    bgcolor: 'primary.main',
-                    fontSize: '0.9rem',
-                  }}
-                  onClick={handleProfileMenuOpen}
-                />
-                <Menu
-                  anchorEl={profileAnchorEl}
-                  open={Boolean(profileAnchorEl)}
-                  onClose={handleProfileMenuClose}
-                  PaperProps={{
-                    elevation: 3,
-                    sx: { mt: 1.5, minWidth: 180, borderRadius: 1 },
-                  }}
-                >
-                  <MenuItem
-                    onClick={() => {
-                      logout();
-                      handleProfileMenuClose();
-                    }}
-                  >
-                    Logout
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <>
-                <Button
-                  component={Link}
-                  href="/login"
-                  sx={{
-                    color: 'text.primary',
-                    fontWeight: 600,
-                    '&:hover': { color: 'primary.main' },
-                  }}
-                >
-                  Login
-                </Button>
-                <Button
-                  component={Link}
-                  href="/register"
-                  variant="contained"
-                  color="primary"
-                  sx={{
-                    borderRadius: 6,
-                    px: 3,
-                    py: 1,
-                    fontWeight: 600,
-                  }}
-                >
-                  Sign Up
-                </Button>
-              </>
-            )
-            }
-          </Box>
-
-          {/* Mobile Menu */}
-          <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
-            <IconButton color="inherit" onClick={handleMenuOpen}>
-              <MenuIcon />
-            </IconButton>
-
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              PaperProps={{
-                elevation: 3,
-                sx: {
-                  mt: 1.5,
-                  minWidth: 180,
-                  borderRadius: 2,
-                },
+            {/* Logo */}
+            <Typography
+              variant="h6"
+              component="button"
+              onClick={() => {
+                if (isJobseeker || isEmployer) {
+                  navigateWithLoader('/dashboard')
+                } else {
+                  navigateWithLoader('/')
+                }
+              }} // ✅ Added loader on logo click
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                color: '#00A884',
+                fontSize: '1.5rem',
+                letterSpacing: '-0.02em',
               }}
             >
-              {mobileMenuItems}
-            </Menu>
-          </Box>
-        </Toolbar>
-      </AppBar>
-    </HideOnScroll>
+              Part Time Match
+            </Typography>
+
+            {/* Desktop Menu */}
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
+              {user ? (
+                <>
+                  {
+                    user?.profileCompleted && (
+
+                      <>
+                        <Button
+                          onClick={() => navigateWithLoader('/dashboard')}
+                          sx={{
+                            fontWeight: 600,
+                            color: 'text.primary',
+                            '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
+                          }}
+                        >
+                          Dashboard
+                        </Button>
+                      </>
+                    )
+                  }
+                  {isJobseeker && user?.profileCompleted && (
+                    <>
+                      <Button
+                        onClick={() => navigateWithLoader('/jobs')}
+                        sx={{
+                          fontWeight: 600,
+                          color: 'text.primary',
+                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
+                        }}
+                      >
+                        Find Jobs
+                      </Button>
+                      <Button
+                        onClick={() => navigateWithLoader('/profile/jobseeker')}
+                        sx={{
+                          fontWeight: 600,
+                          color: 'text.primary',
+                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
+                        }}
+                      >
+                        Profile
+                      </Button>
+                    </>
+                  )}
+
+                  {isEmployer && user?.profileCompleted && (
+                    <>
+                      <Button
+                        onClick={() => navigateWithLoader('/post-job')}
+                        sx={{
+                          fontWeight: 600,
+                          color: 'text.primary',
+                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
+                        }}
+                      >
+                        Post Job
+                      </Button>
+                      <Button
+                        onClick={() => navigateWithLoader('/profile/employer')}
+                        sx={{
+                          fontWeight: 600,
+                          color: 'text.primary',
+                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
+                        }}
+                      >
+                        Profile
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Avatar dropdown */}
+                  <Avatar
+                    alt={user.name || 'User'}
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      ml: 1,
+                      cursor: 'pointer',
+                      bgcolor: 'primary.main',
+                      fontSize: '0.9rem',
+                    }}
+                    onClick={handleProfileMenuOpen}
+                  />
+                  <Menu
+                    anchorEl={profileAnchorEl}
+                    open={Boolean(profileAnchorEl)}
+                    onClose={handleProfileMenuClose}
+                    PaperProps={{
+                      elevation: 3,
+                      sx: { mt: 1.5, minWidth: 180, borderRadius: 1 },
+                    }}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        logout();
+                        handleProfileMenuClose();
+                      }}
+                    >
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <>
+                  <Button
+                      onClick={() => navigateWithLoader('/login')}
+                      sx={{
+                        color: 'text.primary',
+                        fontWeight: 600,
+                        '&:hover': { color: 'primary.main' },
+                      }}
+                    >
+                      Login
+                    </Button>
+                    <Button
+                      onClick={() => navigateWithLoader('/register')}
+                      variant="contained"
+                      color="primary"
+                      sx={{
+                        borderRadius: 6,
+                        px: 3,
+                        py: 1,
+                        fontWeight: 600,
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                  </>
+              )}
+            </Box>
+
+            {/* Mobile Menu */}
+            <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+              <IconButton color="inherit" onClick={handleMenuOpen}>
+                <MenuIcon />
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 180,
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                {user
+                  ? [
+                    ...(isJobseeker
+                      ? [
+                        <MenuItem key="jobs" onClick={() => navigateWithLoader('/jobs')}>
+                          Find Jobs
+                        </MenuItem>,
+                        <MenuItem key="profile-jobseeker" onClick={() => navigateWithLoader('/profile/jobseeker')}>
+                          Profile
+                        </MenuItem>,
+                      ]
+                      : []),
+                    ...(isEmployer
+                      ? [
+                        <MenuItem key="post" onClick={() => navigateWithLoader('/post-job')}>
+                          Post Job
+                        </MenuItem>,
+                        <MenuItem key="profile-employer" onClick={() => navigateWithLoader('/profile/employer')}>
+                          Profile
+                        </MenuItem>,
+                      ]
+                      : []),
+                    <Divider key="divider" />,
+                    <MenuItem
+                      key="logout"
+                      onClick={() => {
+                        logout();
+                        handleMenuClose();
+                      }}
+                    >
+                      Logout
+                    </MenuItem>,
+                  ]
+                  : [
+                    <MenuItem key="login" onClick={() => navigateWithLoader('/login')}>
+                      Login
+                    </MenuItem>,
+                    <MenuItem key="signup" onClick={() => navigateWithLoader('/register')}>
+                      Sign Up
+                    </MenuItem>,
+                  ]}
+              </Menu>
+            </Box>
+          </Toolbar>
+        </AppBar>
+      </HideOnScroll>
+    </>
   );
 }

@@ -8,6 +8,8 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { AuthProvider } from '../contexts/AuthContext';
 import { SocketProvider } from '../contexts/SocketContext';
+import NavigationEvents from '../components/NavigationEvents';
+import { NavigationProvider } from '../contexts/NavigationContext';
 import '@fontsource/montserrat/400.css';
 import '@fontsource/montserrat/500.css';
 import '@fontsource/montserrat/600.css';
@@ -27,9 +29,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <CssBaseline />
           <AuthProvider>
             <SocketProvider>
-              <Header />
-              <main style={{ minHeight: '80vh' }}>{children}</main>
-              <Footer />
+              <NavigationProvider>
+                <Header />
+                <NavigationEvents /> {/* Universal full-page loader */}
+                <main style={{ minHeight: '80vh' }}>{children}</main>
+                <Footer />
+              </NavigationProvider>
             </SocketProvider>
           </AuthProvider>
         </ThemeProvider>

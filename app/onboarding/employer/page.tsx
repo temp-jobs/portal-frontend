@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import FullPageLoader from '@/components/FullPageLoader'
 
 const steps = ['Company Info', 'Website', 'Description', 'Review & Submit'];
 
@@ -27,8 +28,9 @@ export default function EmployerOnboardingPage() {
   const [companyName, setCompanyName] = useState('');
   const [companyWebsite, setCompanyWebsite] = useState('');
   const [companyDescription, setCompanyDescription] = useState('');
-  const [industry, setIndustry] = useState('');
+  const [companyIndustry, setCompanyIndustry] = useState('');
   const [companySize, setCompanySize] = useState('');
+  const [companyLocation, setCompanyLocation] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [existingData, setExistingData] = useState<any>(null);
@@ -45,7 +47,7 @@ export default function EmployerOnboardingPage() {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Unauthorized');
-
+        setInitialLoading(true)
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/profile/employer`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -57,8 +59,9 @@ export default function EmployerOnboardingPage() {
         setCompanyName(data.companyName || '');
         setCompanyWebsite(data.companyWebsite || '');
         setCompanyDescription(data.companyDescription || '');
-        setIndustry(data.industry || '');
+        setCompanyIndustry(data.companyIndustry || '');
         setCompanySize(data.companySize || '');
+        setCompanyLocation(data.companyLocation || '');
       } catch (err: any) {
         console.error('Failed to fetch profile:', err);
         setError(err.response?.data?.message || 'Failed to load profile data');
@@ -101,8 +104,9 @@ export default function EmployerOnboardingPage() {
       if (!existingData?.companyWebsite && companyWebsite) payload.companyWebsite = companyWebsite;
       if (!existingData?.companyDescription && companyDescription)
         payload.companyDescription = companyDescription;
-      if (!existingData?.industry && industry) payload.industry = industry;
+      if (!existingData?.industry && companyIndustry) payload.companyIndustry = companyIndustry;
       if (!existingData?.companySize && companySize) payload.companySize = companySize;
+      if (!existingData?.companyLocation && companyLocation) payload.companyLocation = companyLocation;
 
       if (Object.keys(payload).length === 0) {
         setError('All profile details are already completed.');
@@ -123,16 +127,15 @@ export default function EmployerOnboardingPage() {
     }
   };
 
+  if (loading) return <FullPageLoader message="Updating details..." />
+
   // -------------------------
   // Step Content with readonly control
   // -------------------------
   const renderStepContent = () => {
     if (initialLoading) {
       return (
-        <Box textAlign="center" py={5}>
-          <CircularProgress />
-          <Typography mt={2}>Loading your company data...</Typography>
-        </Box>
+        <FullPageLoader message="Fetching Details..." />
       );
     }
 
@@ -150,9 +153,18 @@ export default function EmployerOnboardingPage() {
               helperText={existingData?.companyName ? 'Already filled from database' : ''}
             />
             <TextField
+              label="Company Location"
+              value={companyLocation}
+              onChange={(e) => setCompanyLocation(e.target.value)}
+              required
+              fullWidth
+              InputProps={{ readOnly: Boolean(existingData?.companyLocation) }}
+              helperText={existingData?.companyLocation ? 'Already filled from database' : ''}
+            />
+            <TextField
               label="Industry (Optional)"
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
+              value={companyIndustry}
+              onChange={(e) => setCompanyIndustry(e.target.value)}
               fullWidth
               InputProps={{ readOnly: Boolean(existingData?.industry) }}
               helperText={existingData?.industry ? 'Already filled from database' : ''}
@@ -226,7 +238,7 @@ export default function EmployerOnboardingPage() {
             </Typography>
             <Typography><b>Company Name:</b> {companyName}</Typography>
             {companyWebsite && <Typography><b>Website:</b> {companyWebsite}</Typography>}
-            {industry && <Typography><b>Industry:</b> {industry}</Typography>}
+            {companyIndustry && <Typography><b>Industry:</b> {companyIndustry}</Typography>}
             {companySize && <Typography><b>Size:</b> {companySize}</Typography>}
             <Typography mt={1}><b>Description:</b> {companyDescription}</Typography>
           </Box>
