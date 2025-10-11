@@ -11,6 +11,8 @@ import {
   Divider,
   CircularProgress,
 } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
+import FullPageLoader from '../../components/FullPageLoader';
 import Input from '../../components/Input';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -29,14 +31,15 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
-
-    } catch (err) {
+      await login(email, password); // optional redirect after success
+    } catch {
       setError('Invalid email or password');
     } finally {
       setLoading(false);
     }
   };
+
+  if (loading) return <FullPageLoader message="Logging you in..." />;
 
   return (
     <Grid container sx={{ minHeight: '100vh' }}>
@@ -44,13 +47,14 @@ export default function LoginPage() {
       <Grid
         size={{ xs: 12, md: 6 }}
         sx={{
-          background: 'linear-gradient(135deg, #6fda44 0%, #3ac569 100%)',
+          background: 'linear-gradient(135deg, #00A884 0%, #4DD4B0 100%)',
           color: '#fff',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          alignItems: 'flex-start',
-          p: { xs: 4, md: 10 },
+          alignItems: { xs: 'center', md: 'flex-start' },
+          textAlign: { xs: 'center', md: 'left' },
+          p: { xs: 5, md: 10 },
         }}
       >
         <Typography variant="h3" fontWeight={800} mb={3}>
@@ -78,7 +82,7 @@ export default function LoginPage() {
         }}
       >
         <Paper
-          elevation={4}
+          elevation={3}
           sx={{
             width: '100%',
             maxWidth: 420,
@@ -86,12 +90,7 @@ export default function LoginPage() {
             borderRadius: 4,
           }}
         >
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            mb={3}
-            textAlign="center"
-          >
+          <Typography variant="h4" fontWeight={700} mb={3} textAlign="center">
             Log In to Your Account
           </Typography>
 
@@ -125,9 +124,8 @@ export default function LoginPage() {
                 mt: 1,
                 mb: 2,
                 color: 'primary.main',
-                cursor: 'pointer',
-                fontSize: 14,
                 fontWeight: 500,
+                cursor: 'pointer',
                 '&:hover': { textDecoration: 'underline' },
               }}
               onClick={() => router.push('/forgot-password')}
@@ -161,20 +159,20 @@ export default function LoginPage() {
               variant="outlined"
               fullWidth
               size="large"
+              startIcon={<GoogleIcon />}
               sx={{
                 borderRadius: 3,
                 py: 1.5,
                 fontWeight: 600,
+                color: '#1E293B',
+                borderColor: '#CBD5E1',
+                '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
               }}
             >
               Continue with Google
             </Button>
 
-            <Typography
-              variant="body2"
-              textAlign="center"
-              sx={{ mt: 3 }}
-            >
+            <Typography variant="body2" textAlign="center" sx={{ mt: 3 }}>
               Don’t have an account?{' '}
               <Box
                 component="span"

@@ -23,6 +23,7 @@ import axios from 'axios';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
 import {useRouter} from 'next/navigation';
+import FullPageLoader from '../../../components/FullPageLoader'
 
 interface AppliedJob {
   id: string;
@@ -96,6 +97,7 @@ export default function JobseekerProfilePage() {
       );
       setSuccess('Profile updated successfully');
       setIsEditing(false);
+      // window.location.reload();
     } catch (err) {
       setError('Failed to update profile');
     } finally {
@@ -103,11 +105,9 @@ export default function JobseekerProfilePage() {
     }
   };
 
-  if (loading && !profile) {
+  if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress />
-      </Box>
+      <FullPageLoader message="Please wait..." />
     );
   }
 
@@ -153,7 +153,7 @@ export default function JobseekerProfilePage() {
             label={profile?.role || 'Jobseeker'}
             color="primary"
             variant="outlined"
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, textTransform: 'capitalize' }}
           />
         </Box>
         <Box>

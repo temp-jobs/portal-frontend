@@ -12,8 +12,8 @@ import {
   Box,
   Paper,
 } from '@mui/material';
-import { SocketContext } from '../../contexts/SocketContext';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useSocketContext } from '../../contexts/SocketContext';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 interface Message {
   _id: string;
@@ -24,8 +24,8 @@ interface Message {
 }
 
 const ChatPage = () => {
-  const { socket } = useContext(SocketContext);
-  const { user } = useContext(AuthContext);
+  const { socket } = useSocketContext();
+  const { user } = useAuthContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);

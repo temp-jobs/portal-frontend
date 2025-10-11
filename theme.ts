@@ -7,9 +7,9 @@ let theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#6fda44', // Upwork green
-      light: '#85e066',
-      dark: '#4e9f2f',
+      main: '#00A884', // Part Time Match's Green green
+      light: '#00A884',
+      dark: '#00A884',
       contrastText: '#fff',
     },
     secondary: {
@@ -90,18 +90,18 @@ let theme = createTheme({
         },
         containedPrimary: {
           boxShadow: 'none',
-          backgroundColor: '#6fda44',
+          backgroundColor: '#00A884',
           '&:hover': {
-            backgroundColor: '#58c637',
+            backgroundColor: '#00A884',
             boxShadow: '0 4px 20px rgba(111, 218, 68, 0.3)',
           },
         },
         outlinedPrimary: {
-          borderColor: '#6fda44',
-          color: '#6fda44',
+          borderColor: '#00A884',
+          color: '#00A884',
           '&:hover': {
             backgroundColor: 'rgba(111, 218, 68, 0.08)',
-            borderColor: '#58c637',
+            borderColor: '#00A884',
           },
         },
       },

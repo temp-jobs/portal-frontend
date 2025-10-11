@@ -4,7 +4,7 @@ import React, { createContext, ReactNode, useContext, useEffect, useState } from
 import { io, Socket } from 'socket.io-client';
 import { useAuthContext } from './AuthContext';
 
-const SocketContext = createContext<Socket | null>(null);
+export const SocketContext = createContext<Socket | null>(null);
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { token } = useAuthContext();

@@ -5,12 +5,17 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
 interface User {
-  avatarUrl: string;
-  id: string;
+  _id: string; // 👈 Add this line
+  id?: string; // optional fallback for future API consistency
   email: string;
-  name: string;
+  name?: string; // jobseeker
+  avatarUrl?: string;
   role: 'jobseeker' | 'employer';
+  companyName?: string; // employer
+  companyWebsite?: string;
+  profileCompleted?: boolean;
 }
+
 
 interface AuthContextType {
   user: User | null;
@@ -49,9 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // ✅ Role-based redirect
       if (user.role === 'employer') {
-        router.push(user.profileCompleted ? '/profile/employer' : '/onboarding/employer');
+        router.push(user.profileCompleted ? '/dashboard' : '/onboarding/employer');
       } else if (user.role === 'jobseeker') {
-        router.push(user.profileCompleted ? '/profile/jobseeker' : '/onboarding/jobseeker');
+        router.push(user.profileCompleted ? '/dashboard' : '/onboarding/jobseeker');
       } else {
         // fallback for undefined roles
         router.push('/');
