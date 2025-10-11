@@ -12,7 +12,6 @@ import {
   CardContent,
   Avatar,
   Chip,
-  CircularProgress,
   List,
   ListItem,
   ListItemText,
@@ -23,7 +22,6 @@ import axios from 'axios';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
 import FullPageLoader from '../../../components/FullPageLoader';
-import { useRouter } from 'next/navigation'
 
 interface PostedJob {
   id: string;
@@ -33,12 +31,23 @@ interface PostedJob {
   status: string;
 }
 
+interface EmployerProfile {
+  companyName: string;
+  companyWebsite?: string;
+  companyDescription?: string;
+  companyIndustry?: string;
+  companyLocation?: string;
+  companySize?: string;
+  email: string;
+  role?: string;
+  postedJobs?: PostedJob[];
+}
+
 export default function EmployerProfilePage() {
 
-  const router = useRouter();
   const { user, token } = useAuthContext();
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<EmployerProfile[]>([]);
   const [postedJobs, setPostedJobs] = useState<PostedJob[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -54,13 +63,11 @@ export default function EmployerProfilePage() {
     email: '',
   });
 
+
+
   // Fetch employer profile
   useEffect(() => {
     if (!token) return;
-
-    // if (!user?.profileCompleted) {
-    //   router.push('/onboarding/employer')
-    // }
 
     const fetchProfile = async () => {
       setLoading(true);
@@ -78,7 +85,7 @@ export default function EmployerProfilePage() {
           companyIndustry: profileData.companyIndustry || '',
           companyLocation: profileData.companyLocation || '',
           companySize: profileData.companySize || '',
-          email: profileData.email || '',
+          email: profileData.email || ''
         });
       } catch (err) {
         console.error(err);
@@ -181,7 +188,7 @@ export default function EmployerProfilePage() {
           </Typography>
           <Typography color="text.secondary">{form.email}</Typography>
           <Chip
-            label={profile?.role || 'Employer'}
+            label={'Employer'}
             color="primary"
             variant="outlined"
             sx={{ mt: 1, textTransform: 'capitalize' }}

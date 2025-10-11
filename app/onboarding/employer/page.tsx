@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import FullPageLoader from '@/components/FullPageLoader'
+import FullPageLoader from '@/components/FullPageLoader';
 
 const steps = ['Company Info', 'Website', 'Description', 'Review & Submit'];
 
@@ -39,23 +39,23 @@ export default function EmployerOnboardingPage() {
   const [success, setSuccess] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // -------------------------
-  // Fetch existing employer profile
-  // -------------------------
+  // Fetch employer profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Unauthorized');
-        setInitialLoading(true)
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/profile/employer`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        setInitialLoading(true);
+
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/profile/employer`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         const data = res.data;
         setExistingData(data);
-
-        // Prefill existing fields
         setCompanyName(data.companyName || '');
         setCompanyWebsite(data.companyWebsite || '');
         setCompanyDescription(data.companyDescription || '');
@@ -63,7 +63,7 @@ export default function EmployerOnboardingPage() {
         setCompanySize(data.companySize || '');
         setCompanyLocation(data.companyLocation || '');
       } catch (err: any) {
-        console.error('Failed to fetch profile:', err);
+        console.error('❌ Employer fetch failed:', err);
         setError(err.response?.data?.message || 'Failed to load profile data');
       } finally {
         setInitialLoading(false);
@@ -88,9 +88,6 @@ export default function EmployerOnboardingPage() {
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  // -------------------------
-  // Submit profile only for missing fields
-  // -------------------------
   const handleSubmit = async () => {
     setLoading(true);
     setError(null);
@@ -98,7 +95,6 @@ export default function EmployerOnboardingPage() {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Unauthorized');
 
-      // Only send fields that are empty in DB
       const payload: any = {};
       if (!existingData?.companyName && companyName) payload.companyName = companyName;
       if (!existingData?.companyWebsite && companyWebsite) payload.companyWebsite = companyWebsite;
@@ -106,7 +102,8 @@ export default function EmployerOnboardingPage() {
         payload.companyDescription = companyDescription;
       if (!existingData?.industry && companyIndustry) payload.companyIndustry = companyIndustry;
       if (!existingData?.companySize && companySize) payload.companySize = companySize;
-      if (!existingData?.companyLocation && companyLocation) payload.companyLocation = companyLocation;
+      if (!existingData?.companyLocation && companyLocation)
+        payload.companyLocation = companyLocation;
 
       if (Object.keys(payload).length === 0) {
         setError('All profile details are already completed.');
@@ -121,24 +118,17 @@ export default function EmployerOnboardingPage() {
       setSuccess(true);
       setTimeout(() => router.push('/profile/employer'), 1500);
     } catch (err: any) {
+      console.error('❌ Onboarding submission failed:', err);
       setError(err.response?.data?.message || 'Failed to complete onboarding');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <FullPageLoader message="Updating details..." />
+  if (loading) return <FullPageLoader message="Updating details..." />;
+  if (initialLoading) return <FullPageLoader message="Fetching Details..." />;
 
-  // -------------------------
-  // Step Content with readonly control
-  // -------------------------
   const renderStepContent = () => {
-    if (initialLoading) {
-      return (
-        <FullPageLoader message="Fetching Details..." />
-      );
-    }
-
     switch (activeStep) {
       case 0:
         return (
@@ -201,7 +191,7 @@ export default function EmployerOnboardingPage() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-                disabled={true}
+                disabled
               />
               <Typography variant="caption" color="text.secondary">
                 Logo uploads will be supported later.
@@ -277,39 +267,37 @@ export default function EmployerOnboardingPage() {
 
           {renderStepContent()}
 
-          {!initialLoading && (
-            <Box display="flex" justifyContent="space-between" mt={5}>
-              <Button
-                disabled={activeStep === 0 || loading}
-                onClick={handleBack}
-                variant="outlined"
-                sx={{ borderRadius: 3 }}
-              >
-                Back
-              </Button>
+          <Box display="flex" justifyContent="space-between" mt={5}>
+            <Button
+              disabled={activeStep === 0 || loading}
+              onClick={handleBack}
+              variant="outlined"
+              sx={{ borderRadius: 3 }}
+            >
+              Back
+            </Button>
 
-              {activeStep < steps.length - 1 ? (
-                <Button
-                  onClick={handleNext}
-                  variant="contained"
-                  sx={{ borderRadius: 3, px: 4 }}
-                  disabled={loading}
-                >
-                  Next
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  variant="contained"
-                  color="primary"
-                  sx={{ borderRadius: 3, px: 4 }}
-                  disabled={loading}
-                >
-                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit'}
-                </Button>
-              )}
-            </Box>
-          )}
+            {activeStep < steps.length - 1 ? (
+              <Button
+                onClick={handleNext}
+                variant="contained"
+                sx={{ borderRadius: 3, px: 4 }}
+                disabled={loading}
+              >
+                Next
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                variant="contained"
+                color="primary"
+                sx={{ borderRadius: 3, px: 4 }}
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit'}
+              </Button>
+            )}
+          </Box>
         </CardContent>
       </Card>
     </Container>

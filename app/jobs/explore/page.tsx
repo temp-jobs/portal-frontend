@@ -26,8 +26,20 @@ import TranslateIcon from '@mui/icons-material/Translate';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 
+// ---------- Types ----------
+interface Category {
+  title: string;
+  subcategories: string[];
+}
+
+interface ExploreTile {
+  title: string;
+  jobs: number;
+  icon: React.ReactNode;
+}
+
 // ---------- Mock Data ----------
-const categories = [
+const categories: Category[] = [
   {
     title: 'Development & IT',
     subcategories: [
@@ -69,7 +81,7 @@ const categories = [
   },
 ];
 
-const exploreTiles = [
+const exploreTiles: ExploreTile[] = [
   { title: 'Web Developers', jobs: 1200, icon: <CodeIcon /> },
   { title: 'Graphic Designers', jobs: 845, icon: <DesignServicesIcon /> },
   { title: 'Writers & Editors', jobs: 650, icon: <EditNoteIcon /> },
@@ -78,7 +90,14 @@ const exploreTiles = [
   { title: 'AI Engineers', jobs: 270, icon: <WorkOutlineIcon /> },
 ];
 
-const filters = ['Remote Only', 'Fixed Price', 'Hourly', 'Entry Level', 'Intermediate', 'Expert'];
+const filters = [
+  'Remote Only',
+  'Fixed Price',
+  'Hourly',
+  'Entry Level',
+  'Intermediate',
+  'Expert',
+];
 
 export default function ExploreJobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +105,9 @@ export default function ExploreJobsPage() {
 
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) =>
-      prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]
+      prev.includes(filter)
+        ? prev.filter((f) => f !== filter)
+        : [...prev, filter]
     );
   };
 
@@ -101,14 +122,7 @@ export default function ExploreJobsPage() {
       </Typography>
 
       {/* ---------- Search + Filters ---------- */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          mb: 4,
-        }}
-      >
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
         <TextField
           placeholder="Search job titles, skills, or categories"
           fullWidth
@@ -169,7 +183,11 @@ export default function ExploreJobsPage() {
 
           {categories.map((cat) => (
             <Box key={cat.title} mb={3}>
-              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                sx={{ mb: 1 }}
+              >
                 {cat.title}
               </Typography>
               <List dense disablePadding>
@@ -180,7 +198,10 @@ export default function ExploreJobsPage() {
                       borderRadius: 2,
                       pl: 2,
                       py: 0.8,
-                      '&:hover': { bgcolor: 'primary.light', color: 'white' },
+                      '&:hover': {
+                        bgcolor: 'primary.light',
+                        color: 'white',
+                      },
                     }}
                   >
                     <ListItemText primary={sub} />
@@ -198,7 +219,10 @@ export default function ExploreJobsPage() {
           </Typography>
           <Grid container spacing={3}>
             {exploreTiles.map((item) => (
-              <Grid key={item.title} item xs={12} sm={6} md={4}>
+              <Grid
+                key={item.title}
+                size={{ xs: 12, sm: 6, md: 4 }} // ✅ per your preferred grid layout
+              >
                 <Card
                   variant="outlined"
                   sx={{

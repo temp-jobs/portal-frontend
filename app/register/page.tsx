@@ -24,16 +24,16 @@ export default function RegisterPage() {
   const { register } = useAuthContext();
   const router = useRouter();
 
-  const [name, setName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState<string>('');
+  const [companyName, setCompanyName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [role, setRole] = useState<'jobseeker' | 'employer'>('jobseeker');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -46,14 +46,21 @@ export default function RegisterPage() {
     try {
       const displayName = role === 'jobseeker' ? name : companyName;
       await register(displayName, email, password, role);
-    } catch (err) {
+    } catch {
       setError('Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <FullPageLoader message="Signing you up..." />
+  const handleRoleChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newRole: 'jobseeker' | 'employer' | null
+  ) => {
+    if (newRole) setRole(newRole);
+  };
+
+  if (loading) return <FullPageLoader message="Signing you up..." />;
 
   return (
     <Grid container sx={{ minHeight: '100vh' }}>
@@ -112,7 +119,7 @@ export default function RegisterPage() {
             value={role}
             exclusive
             fullWidth
-            onChange={(_, value) => value && setRole(value)}
+            onChange={handleRoleChange}
             sx={{
               mb: 3,
               '& .MuiToggleButton-root': {
@@ -131,7 +138,11 @@ export default function RegisterPage() {
             </ToggleButton>
           </ToggleButtonGroup>
 
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
             {role === 'jobseeker' ? (

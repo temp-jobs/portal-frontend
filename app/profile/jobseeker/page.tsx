@@ -12,18 +12,16 @@ import {
   CardContent,
   Avatar,
   Chip,
-  CircularProgress,
   List,
   ListItem,
   ListItemText,
-  Grid,
-  Stack,
+  Grid
 } from '@mui/material';
-import axios from 'axios';
-import { useAuthContext } from '../../../contexts/AuthContext';
+import axios, { AxiosError } from 'axios';
+import { useRouter } from 'next/navigation';
 import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
-import {useRouter} from 'next/navigation';
-import FullPageLoader from '../../../components/FullPageLoader'
+import { useAuthContext } from '../../../contexts/AuthContext';
+import FullPageLoader from '../../../components/FullPageLoader';
 
 interface AppliedJob {
   id: string;
@@ -32,44 +30,60 @@ interface AppliedJob {
   status: string;
 }
 
-export default function JobseekerProfilePage() {
+interface JobseekerProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  profileCompleted: boolean;
+  skills: string[];
+  experience: string[];
+  education: string[];
+  appliedJobs: AppliedJob[];
+}
 
+export default function JobseekerProfilePage(): JSX.Element {
   const router = useRouter();
-  const { user, token } = useAuthContext();
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<any>(null);
-  const [appliedJobs, setAppliedJobs] = useState<AppliedJob[]>([]);
+  const { token } = useAuthContext();
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [profile, setProfile] = useState<JobseekerProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // Editable fields
-  const [name, setName] = useState('');
+  const [name, setName] = useState<string>('');
   const [skills, setSkills] = useState<string[]>([]);
   const [experience, setExperience] = useState<string[]>([]);
   const [education, setEducation] = useState<string[]>([]);
 
+  // Fetch Jobseeker profile
   useEffect(() => {
     if (!token) return;
 
-    const fetchProfile = async () => {
+    const fetchProfile = async (): Promise<void> => {
       setLoading(true);
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get<JobseekerProfile>(
+          `${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-        if(!res?.data.profileCompleted){
-          router.push('/onboarding/jobseeker')
-        } else if (res?.data) {
-          setProfile(res.data);
-          setAppliedJobs(res.data.appliedJobs || []);
-          setName(res.data.name || '');
-          setSkills(res.data.skills || []);
-          setExperience(res.data.experience || []);
-          setEducation(res.data.education || []);
+        const data = res.data;
+        if (!data.profileCompleted) {
+          router.push('/onboarding/jobseeker');
+          return;
         }
+
+        setProfile(data);
+        setName(data.name || '');
+        setSkills(data.skills || []);
+        setExperience(data.experience || []);
+        setEducation(data.education || []);
       } catch (err) {
+        const axiosErr = err as AxiosError;
+        console.error('Profile fetch error:', axiosErr);
         setError('Failed to load profile');
       } finally {
         setLoading(false);
@@ -77,9 +91,9 @@ export default function JobseekerProfilePage() {
     };
 
     fetchProfile();
-  }, [token]);
+  }, [token, router]);
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     setError(null);
     setSuccess(null);
 
@@ -97,19 +111,15 @@ export default function JobseekerProfilePage() {
       );
       setSuccess('Profile updated successfully');
       setIsEditing(false);
-      // window.location.reload();
     } catch (err) {
+      console.error('Profile update error:', err);
       setError('Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <FullPageLoader message="Please wait..." />
-    );
-  }
+  if (loading && !profile) return <FullPageLoader message="Please wait..." />;
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
@@ -145,7 +155,7 @@ export default function JobseekerProfilePage() {
           {profile?.name?.[0] || 'U'}
         </Avatar>
         <Box flex={1}>
-          <Typography variant="h5" fontWeight="600">
+          <Typography variant="h5" fontWeight={600}>
             {profile?.name}
           </Typography>
           <Typography color="text.secondary">{profile?.email}</Typography>
@@ -173,7 +183,7 @@ export default function JobseekerProfilePage() {
       {/* --- Personal Information --- */}
       <Card elevation={2} sx={{ borderRadius: 1, mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="600" mb={2} color="primary">
+          <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Personal Information
           </Typography>
 
@@ -198,7 +208,7 @@ export default function JobseekerProfilePage() {
       {/* --- Skills Section --- */}
       <Card elevation={2} sx={{ borderRadius: 1, mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="600" mb={2} color="primary">
+          <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Skills
           </Typography>
 
@@ -207,12 +217,14 @@ export default function JobseekerProfilePage() {
               label="Enter comma-separated skills"
               fullWidth
               value={skills.join(', ')}
-              onChange={(e) => setSkills(e.target.value.split(',').map(s => s.trim()))}
+              onChange={(e) =>
+                setSkills(e.target.value.split(',').map((s) => s.trim()))
+              }
               margin="normal"
             />
           ) : profile?.skills?.length ? (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {profile.skills.map((skill: string, i: number) => (
+                {profile.skills.map((skill, i) => (
                 <Chip key={i} label={skill} color="primary" variant="outlined" />
               ))}
             </Box>
@@ -225,12 +237,12 @@ export default function JobseekerProfilePage() {
       {/* --- Experience Section --- */}
       <Card elevation={2} sx={{ borderRadius: 1, mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="600" mb={2} color="primary">
+          <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Experience
           </Typography>
           <Grid container spacing={2}>
             {['Type', 'Work Mode', 'Availability'].map((label, idx) => (
-              <Grid key={idx} size={{ xs: 12, sm: 6 }}>
+              <Grid key={label} size={{ xs: 12, sm: 6 }}>
                 {isEditing ? (
                   <TextField
                     label={label}
@@ -257,12 +269,12 @@ export default function JobseekerProfilePage() {
       {/* --- Education Section --- */}
       <Card elevation={2} sx={{ borderRadius: 1, mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="600" mb={2} color="primary">
+          <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Education
           </Typography>
           <Grid container spacing={2}>
             {['Qualification', 'Institute', 'Passing Year'].map((label, idx) => (
-              <Grid key={idx} size={{ xs: 12, sm: 6 }}>
+              <Grid key={label} size={{ xs: 12, sm: 6 }}>
                 {isEditing ? (
                   <TextField
                     label={label}
@@ -289,18 +301,18 @@ export default function JobseekerProfilePage() {
       {/* --- Applied Jobs Section --- */}
       <Card elevation={2} sx={{ borderRadius: 1 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="600" mb={2} color="primary">
+          <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Applied Jobs
           </Typography>
-          {!appliedJobs?.length ? (
+          {!profile?.appliedJobs?.length ? (
             <Typography color="text.secondary">No applied jobs yet.</Typography>
           ) : (
             <List>
-              {appliedJobs.map((job) => (
+                {profile.appliedJobs.map((job) => (
                 <ListItem key={job.id} divider>
                   <ListItemText
                     primary={
-                      <Typography fontWeight="600" color="text.primary">
+                      <Typography fontWeight={600} color="text.primary">
                         {job.title}
                       </Typography>
                     }
