@@ -1,46 +1,38 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { AuthContext } from './AuthContext';
+import { useAuthContext } from './AuthContext';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL;
+const SocketContext = createContext<Socket | null>(null);
 
-interface SocketContextType {
-  socket: Socket | null;
-}
-
-export const SocketContext = createContext<SocketContextType>({
-  socket: null,
-});
-
-interface Props {
-  children: ReactNode;
-}
-
-export const SocketProvider = ({ children }: Props) => {
-  const { token } = useContext(AuthContext);
+export function SocketProvider({ children }: { children: ReactNode }) {
+  const { token } = useAuthContext();
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    if (token) {
-      const socketIo = io(SOCKET_URL || '', {
-        auth: { token },
-        autoConnect: false,
-      });
-      socketIo.connect();
-      setSocket(socketIo);
-
-      return () => {
-        socketIo.disconnect();
-      };
-    } else {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-      }
+    if (!token) {
+      setSocket(null);
+      return;
     }
+    const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
+      auth: { token },
+      transports: ['websocket'],
+    });
+    setSocket(socketIo);
+
+    return () => {
+      socketIo.disconnect();
+    };
   }, [token]);
 
-  return <SocketContext.Provider value={{ socket }}>{children}</SocketContext.Provider>;
-};
+  return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
+}
+
+export function useSocket() {
+  const context = useContext(SocketContext);
+  if (context === undefined) {
+    throw new Error('useSocket must be used within SocketProvider');
+  }
+  return context;
+}
