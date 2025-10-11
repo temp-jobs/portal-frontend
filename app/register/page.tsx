@@ -1,33 +1,39 @@
 'use client';
 
-import React, { useState, useContext } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import {
-  Container,
-  Typography,
-  TextField,
-  Button,
+  Grid,
   Box,
+  Typography,
+  Button,
   Alert,
+  Paper,
+  ToggleButtonGroup,
+  ToggleButton,
+  Divider,
   CircularProgress,
-  MenuItem,
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
+import Input from '../../components/Input';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import FullPageLoader from '@/components/FullPageLoader';
 
-const RegisterPage = () => {
+export default function RegisterPage() {
+  const { register } = useAuthContext();
   const router = useRouter();
-  const { register } = useContext(AuthContext);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [name, setName] = useState<string>('');
+  const [companyName, setCompanyName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
   const [role, setRole] = useState<'jobseeker' | 'employer'>('jobseeker');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  const [loading, setLoading] = useState(false);
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -37,90 +43,205 @@ const RegisterPage = () => {
     }
 
     setLoading(true);
-    const result = await register({ name, email, password, role });
-    setLoading(false);
-
-    if (result.success) {
-  router.push('/onboarding');
-} else {
-  setError(result.message || 'Registration failed');
-}
+    try {
+      const displayName = role === 'jobseeker' ? name : companyName;
+      await register(displayName, email, password, role);
+    } catch {
+      setError('Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <Container maxWidth="xs" sx={{ mt: 8 }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Register
-      </Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        <TextField
-          label="Full Name"
-          fullWidth
-          required
-          margin="normal"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoComplete="name"
-        />
-        <TextField
-          label="Email"
-          type="email"
-          fullWidth
-          required
-          margin="normal"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
-        <TextField
-          select
-          label="Role"
-          fullWidth
-          required
-          margin="normal"
-          value={role}
-          onChange={(e) => setRole(e.target.value as 'jobseeker' | 'employer')}
-        >
-          <MenuItem value="jobseeker">Job Seeker</MenuItem>
-          <MenuItem value="employer">Employer</MenuItem>
-        </TextField>
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          required
-          margin="normal"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="new-password"
-        />
-        <TextField
-          label="Confirm Password"
-          type="password"
-          fullWidth
-          required
-          margin="normal"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          autoComplete="new-password"
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={loading}
-          sx={{ mt: 2 }}
-        >
-          {loading ? <CircularProgress size={24} /> : 'Register'}
-        </Button>
-      </Box>
-    </Container>
-  );
-};
+  const handleRoleChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    newRole: 'jobseeker' | 'employer' | null
+  ) => {
+    if (newRole) setRole(newRole);
+  };
 
-export default RegisterPage;
+  if (loading) return <FullPageLoader message="Signing you up..." />;
+
+  return (
+    <Grid container sx={{ minHeight: '100vh' }}>
+      {/* LEFT SIDE – Marketing */}
+      <Grid
+        size={{ xs: 12, md: 6 }}
+        sx={{
+          background: 'linear-gradient(135deg, #6fda44 0%, #3ac569 100%)',
+          color: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          p: { xs: 4, md: 10 },
+        }}
+      >
+        <Typography variant="h3" fontWeight={800} mb={3}>
+          Join <Box component="span" color="#fff">Part Time Match</Box>
+        </Typography>
+        <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}>
+          Whether you’re looking for flexible work or hiring top part-time talent — our platform connects the right people, faster.
+        </Typography>
+        <Typography variant="body1" sx={{ opacity: 0.85 }}>
+          ✔ Access hundreds of verified listings <br />
+          ✔ Build your professional profile <br />
+          ✔ Start earning or hiring today
+        </Typography>
+      </Grid>
+
+      {/* RIGHT SIDE – Form */}
+      <Grid
+        size={{ xs: 12, md: 6 }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 4, md: 8 },
+          bgcolor: 'background.default',
+        }}
+      >
+        <Paper
+          elevation={4}
+          sx={{
+            width: '100%',
+            maxWidth: 420,
+            p: 4,
+            borderRadius: 4,
+          }}
+        >
+          <Typography variant="h4" fontWeight={700} mb={3} textAlign="center">
+            Create Your Account
+          </Typography>
+
+          {/* Role Selection */}
+          <ToggleButtonGroup
+            value={role}
+            exclusive
+            fullWidth
+            onChange={handleRoleChange}
+            sx={{
+              mb: 3,
+              '& .MuiToggleButton-root': {
+                borderRadius: 3,
+                textTransform: 'none',
+                fontWeight: 600,
+                p: 1.5,
+              },
+            }}
+          >
+            <ToggleButton value="jobseeker">
+              <PersonOutlineIcon sx={{ mr: 1 }} /> Job Seeker
+            </ToggleButton>
+            <ToggleButton value="employer">
+              <BusinessCenterIcon sx={{ mr: 1 }} /> Employer
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            {role === 'jobseeker' ? (
+              <Input
+                label="Full Name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+              />
+            ) : (
+              <Input
+                label="Organization / Company Name"
+                type="text"
+                required
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                autoComplete="organization"
+              />
+            )}
+
+            <Input
+              label="Email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+            <Input
+              label="Password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+            <Input
+              label="Confirm Password"
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              size="large"
+              disabled={loading}
+              sx={{
+                mt: 3,
+                borderRadius: 3,
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={26} sx={{ color: 'white' }} />
+              ) : (
+                'Register'
+              )}
+            </Button>
+
+            <Divider sx={{ my: 3 }}>or</Divider>
+
+            <Button
+              variant="outlined"
+              fullWidth
+              size="large"
+              sx={{
+                borderRadius: 3,
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              Continue with Google
+            </Button>
+
+            <Typography variant="body2" textAlign="center" sx={{ mt: 3 }}>
+              Already have an account?{' '}
+              <Box
+                component="span"
+                sx={{
+                  color: 'primary.main',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                onClick={() => router.push('/login')}
+              >
+                Login
+              </Box>
+            </Typography>
+          </Box>
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+}

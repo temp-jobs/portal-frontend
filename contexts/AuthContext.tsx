@@ -1,125 +1,133 @@
 'use client';
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
 interface User {
-  _id: string;
-  name: string;
+  _id: string; // 👈 Add this line
+  id?: string; // optional fallback for future API consistency
   email: string;
+  name?: string; // jobseeker
+  avatarUrl?: string;
   role: 'jobseeker' | 'employer';
+  companyName?: string; // employer
+  companyWebsite?: string;
+  profileCompleted?: boolean;
 }
+
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  register: (data: RegisterData) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, password: string) => Promise<{ user: any, token: any }>;
   logout: () => void;
+  register: (nameOrCompany: string, email: string, password: string, role: 'jobseeker' | 'employer') => Promise<void>;
 }
 
-interface RegisterData {
-  name: string;
-  email: string;
-  password: string;
-  role: 'jobseeker' | 'employer';
-}
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  token: null,
-  loading: true,
-  login: async () => ({ success: false }),
-  register: async () => ({ success: false }),
-  logout: () => {},
-});
-
-interface Props {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: Props) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
-    if (savedToken) {
+    const savedUser = localStorage.getItem('user');
+    if (savedToken && savedUser && savedUser !== undefined) {
       setToken(savedToken);
-      fetchProfile(savedToken);
-    } else {
-      setLoading(false);
+      setUser(JSON.parse(savedUser));
     }
   }, []);
 
-  const login = async (
-    email: string,
-    password: string
-  ): Promise<{ success: boolean; message?: string }> => {
+  const login = async (email: string, password: string) => {
     try {
-      const res = await axios.post<{ token: string }>(`${API_URL}/api/auth/login`, { email, password });
-      const token = res.data.token;
-      localStorage.setItem('token', token);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, { email, password });
+      const { token, user } = res.data;
+
+      // Save auth state
       setToken(token);
-      await fetchProfile(token);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+      setUser(user);
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // ✅ Role-based redirect
+      if (user.role === 'employer') {
+        router.push(user.profileCompleted ? '/dashboard' : '/onboarding/employer');
+      } else if (user.role === 'jobseeker') {
+        router.push(user.profileCompleted ? '/dashboard' : '/onboarding/jobseeker');
+      } else {
+        // fallback for undefined roles
+        router.push('/');
+      }
+
+      return { user, token }; // optional, if needed by caller
+
+    } catch (error) {
+      console.error(error);
+      throw new Error('Login failed');
     }
   };
 
-  // Add profileCompleted to User type and AuthContext
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: 'jobseeker' | 'employer';
-  profileCompleted: boolean;  // new field
-}
-
-// In fetchProfile after getting user data, assume backend returns profileCompleted boolean
-
-const fetchProfile = async (token: string) => {
-  try {
-    const res = await axios.get<User>(`${API_URL}/api/profile`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setUser(res.data);
-  } catch (error) {
-    console.error('Failed to fetch profile', error);
-    logout();
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Update login and register to redirect after setting user (handled in pages now)
-
-  const register = async (
-    data: RegisterData
-  ): Promise<{ success: boolean; message?: string }> => {
-    try {
-      await axios.post(`${API_URL}/api/auth/register`, data);
-      return await login(data.email, data.password);
-    } catch (error: any) {
-      return { success: false, message: error.response?.data?.message || 'Registration failed' };
-    }
-  };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
     setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    router.push('/login');
   };
 
+
+  const register = async (
+    nameOrCompany: string,
+    email: string,
+    password: string,
+    role: 'jobseeker' | 'employer'
+  ) => {
+    try {
+      // Prepare payload dynamically
+      const payload =
+        role === 'employer'
+          ? { companyName: nameOrCompany, email, password, role }
+          : { name: nameOrCompany, email, password, role };
+
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
+        payload
+      );
+
+      const { token, user } = res.data;
+      setToken(token);
+      setUser(user);
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      // Redirect based on role
+      if (role === 'employer') {
+        router.push('/onboarding/employer');
+      } else {
+        router.push('/onboarding/jobseeker');
+      }
+    } catch (error) {
+      throw new Error('Registration failed');
+    }
+  };
+
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
+
+export function useAuthContext() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuthContext must be used within AuthProvider');
+  }
+  return context;
+}
