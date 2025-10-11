@@ -1,85 +1,196 @@
 'use client';
 
-import React, { useState, useContext } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 import {
-  Container,
-  Typography,
-  TextField,
-  Button,
+  Grid,
   Box,
+  Typography,
+  Button,
   Alert,
+  Paper,
+  Divider,
   CircularProgress,
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
+import Input from '../../components/Input';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 
-const LoginPage = () => {
+export default function LoginPage() {
+  const { login } = useAuthContext();
   const router = useRouter();
-  const { login } = useContext(AuthContext);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
-    const result = await login(email, password);
-    setLoading(false);
+    setLoading(true);
+    try {
+      await login(email, password);
 
-    if (result.success) {
-      router.push('/');
-    } else {
-      setError(result.message || 'Login failed');
+    } catch (err) {
+      setError('Invalid email or password');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 8 }}>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Login
-      </Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        <TextField
-          label="Email"
-          type="email"
-          fullWidth
-          required
-          margin="normal"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          required
-          margin="normal"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-        />
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={loading}
-          sx={{ mt: 2 }}
-        >
-          {loading ? <CircularProgress size={24} /> : 'Login'}
-        </Button>
-      </Box>
-    </Container>
-  );
-};
+    <Grid container sx={{ minHeight: '100vh' }}>
+      {/* LEFT SIDE – Brand Intro */}
+      <Grid
+        size={{ xs: 12, md: 6 }}
+        sx={{
+          background: 'linear-gradient(135deg, #6fda44 0%, #3ac569 100%)',
+          color: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          p: { xs: 4, md: 10 },
+        }}
+      >
+        <Typography variant="h3" fontWeight={800} mb={3}>
+          Welcome Back
+        </Typography>
+        <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}>
+          Log in to access personalized job matches, apply faster, and manage your professional profile.
+        </Typography>
+        <Typography variant="body1" sx={{ opacity: 0.85 }}>
+          ✔ Save your favorite jobs <br />
+          ✔ Manage applications easily <br />
+          ✔ Grow your part-time career
+        </Typography>
+      </Grid>
 
-export default LoginPage;
+      {/* RIGHT SIDE – Login Form */}
+      <Grid
+        size={{ xs: 12, md: 6 }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: { xs: 4, md: 8 },
+          bgcolor: 'background.default',
+        }}
+      >
+        <Paper
+          elevation={4}
+          sx={{
+            width: '100%',
+            maxWidth: 420,
+            p: 4,
+            borderRadius: 4,
+          }}
+        >
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            mb={3}
+            textAlign="center"
+          >
+            Log In to Your Account
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit} noValidate>
+            <Input
+              label="Email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+            <Input
+              label="Password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+
+            <Box
+              sx={{
+                textAlign: 'right',
+                mt: 1,
+                mb: 2,
+                color: 'primary.main',
+                cursor: 'pointer',
+                fontSize: 14,
+                fontWeight: 500,
+                '&:hover': { textDecoration: 'underline' },
+              }}
+              onClick={() => router.push('/forgot-password')}
+            >
+              Forgot Password?
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              size="large"
+              disabled={loading}
+              sx={{
+                mt: 1,
+                borderRadius: 3,
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={26} sx={{ color: 'white' }} />
+              ) : (
+                'Log In'
+              )}
+            </Button>
+
+            <Divider sx={{ my: 3 }}>or</Divider>
+
+            <Button
+              variant="outlined"
+              fullWidth
+              size="large"
+              sx={{
+                borderRadius: 3,
+                py: 1.5,
+                fontWeight: 600,
+              }}
+            >
+              Continue with Google
+            </Button>
+
+            <Typography
+              variant="body2"
+              textAlign="center"
+              sx={{ mt: 3 }}
+            >
+              Don’t have an account?{' '}
+              <Box
+                component="span"
+                sx={{
+                  color: 'primary.main',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+                onClick={() => router.push('/register')}
+              >
+                Sign up
+              </Box>
+            </Typography>
+          </Box>
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+}
