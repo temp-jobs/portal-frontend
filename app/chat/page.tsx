@@ -1,18 +1,10 @@
 'use client';
 
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
-  Container,
-  Typography,
-  List,
-  ListItem,
-  ListItemText,
-  TextField,
-  Button,
-  Box,
-  Paper,
+  Container, Typography, List, ListItem, ListItemText, TextField, Button, Box, Paper,
 } from '@mui/material';
-import { useSocketContext } from '../../contexts/SocketContext';
+import { useSocket } from '../../contexts/SocketContext';
 import { useAuthContext } from '../../contexts/AuthContext';
 
 interface Message {
@@ -24,29 +16,28 @@ interface Message {
 }
 
 const ChatPage = () => {
-  const { socket } = useSocketContext();
+  const socket = useSocket(); // ✅ FIXED
   const { user } = useAuthContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !user?._id) return;
 
-    socket.emit('joinRoom', user?._id);
+    socket.emit('joinRoom', user._id);
 
-    socket.on('message', (message: Message) => {
+    const handleMessage = (message: Message) => {
       setMessages((prev) => [...prev, message]);
-    });
-
-    return () => {
-      socket.off('message');
     };
-  }, [socket, user]);
+
+    socket.on('message', handleMessage);
+    return () => { socket.off('message', handleMessage); }
+  }, [socket, user?._id]);
 
   const handleSend = () => {
     if (!newMessage.trim() || !socket || !user) return;
-    socket.emit('sendMessage', { content: newMessage, to: null }); // to: null for broadcast or implement user selection
+    socket.emit('sendMessage', { content: newMessage });
     setNewMessage('');
   };
 
@@ -67,15 +58,7 @@ const ChatPage = () => {
       <Typography variant="h5" gutterBottom>
         Real-time Chat
       </Typography>
-      <Paper
-        sx={{
-          height: 400,
-          overflowY: 'auto',
-          p: 2,
-          mb: 2,
-          bgcolor: '#f5f5f5',
-        }}
-      >
+      <Paper sx={{ height: 400, overflowY: 'auto', p: 2, mb: 2, bgcolor: '#f5f5f5' }}>
         <List>
           {messages.map((msg) => (
             <ListItem
@@ -107,12 +90,7 @@ const ChatPage = () => {
           placeholder="Type your message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
         />
         <Button variant="contained" onClick={handleSend}>
           Send
