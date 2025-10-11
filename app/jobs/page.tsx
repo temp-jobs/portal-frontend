@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Typography,
@@ -17,10 +17,9 @@ import {
   Paper,
 } from '@mui/material';
 import { useSearchParams } from 'next/navigation';
-import JobCard from '../../components/JobCard';
 
 // --------------------
-// Mock Job Data
+// Types
 // --------------------
 interface Job {
   id: string;
@@ -33,6 +32,9 @@ interface Job {
   category: string;
 }
 
+// --------------------
+// Mock Job Data
+// --------------------
 const mockJobs: Job[] = [
   {
     id: '1',
@@ -89,6 +91,9 @@ const mockJobs: Job[] = [
 const categories = ['Web Development', 'Graphic Design', 'Writing', 'Marketing'];
 const jobTypes = ['Hourly', 'Fixed Price'];
 
+// --------------------
+// Component
+// --------------------
 export default function JobsPage() {
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -98,64 +103,68 @@ export default function JobsPage() {
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState(searchQuery);
+  const [searchTerm, setSearchTerm] = useState<string>(searchQuery);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedJobTypes, setSelectedJobTypes] = useState<string[]>([]);
 
   const jobsPerPage = 5;
 
-  const filterJobs = (pageNumber = 1, search = '', cat = '') => {
-    setLoading(true);
-    setTimeout(() => {
-      let filtered = mockJobs;
+  const filterJobs = useCallback(
+    (pageNumber: number = 1, search: string = '', cat: string = ''): void => {
+      setLoading(true);
+      setTimeout(() => {
+        let filtered = mockJobs;
 
-      if (search)
-        filtered = filtered.filter(
-          (j) =>
-            j.title.toLowerCase().includes(search.toLowerCase()) ||
-            j.company.toLowerCase().includes(search.toLowerCase()) ||
-            j.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase()))
-        );
+        if (search) {
+          filtered = filtered.filter(
+            (j) =>
+              j.title.toLowerCase().includes(search.toLowerCase()) ||
+              j.company.toLowerCase().includes(search.toLowerCase()) ||
+              j.tags?.some((t) => t.toLowerCase().includes(search.toLowerCase()))
+          );
+        }
 
-      if (cat)
-        filtered = filtered.filter(
-          (j) => j.category.toLowerCase() === cat.toLowerCase()
-        );
+        if (cat) {
+          filtered = filtered.filter(
+            (j) => j.category.toLowerCase() === cat.toLowerCase()
+          );
+        }
 
-      if (selectedCategories.length)
-        filtered = filtered.filter((j) =>
-          selectedCategories.includes(j.category)
-        );
+        if (selectedCategories.length) {
+          filtered = filtered.filter((j) =>
+            selectedCategories.includes(j.category)
+          );
+        }
 
-      const total = filtered.length;
-      const startIndex = (pageNumber - 1) * jobsPerPage;
-      const paginated = filtered.slice(startIndex, startIndex + jobsPerPage);
+        const total = filtered.length;
+        const startIndex = (pageNumber - 1) * jobsPerPage;
+        const paginated = filtered.slice(startIndex, startIndex + jobsPerPage);
 
-      setJobs(paginated);
-      setTotalPages(Math.ceil(total / jobsPerPage));
-      setPage(pageNumber);
-      setLoading(false);
-    }, 400);
-  };
+        setJobs(paginated);
+        setTotalPages(Math.ceil(total / jobsPerPage));
+        setPage(pageNumber);
+        setLoading(false);
+      }, 400);
+    },
+    [selectedCategories]
+  );
 
   useEffect(() => {
     filterJobs(1, searchQuery, categoryQuery);
-  }, [searchQuery, categoryQuery, selectedCategories, selectedJobTypes]);
+  }, [searchQuery, categoryQuery, selectedCategories, selectedJobTypes, filterJobs]);
 
-  const handlePageChange = (_: any, value: number) => {
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
     filterJobs(value, searchTerm, categoryQuery);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     filterJobs(1, searchTerm);
   };
 
-  const handleCategoryToggle = (cat: string) => {
+  const handleCategoryToggle = (cat: string): void => {
     setSelectedCategories((prev) =>
-      prev.includes(cat)
-        ? prev.filter((c) => c !== cat)
-        : [...prev, cat]
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
     );
   };
 
@@ -279,8 +288,11 @@ export default function JobsPage() {
                 ))}
               </Stack>
               <Typography variant="caption" color="text.secondary">
-                Posted {Math.floor((Date.now() - new Date(job.postedAt).getTime()) / 86400000)} day
-                ago
+                Posted{' '}
+                {Math.floor(
+                  (Date.now() - new Date(job.postedAt).getTime()) / 86400000
+                )}{' '}
+                day ago
               </Typography>
             </Paper>
           ))}

@@ -12,9 +12,9 @@ import {
   CircularProgress,
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
-import FullPageLoader from '../../components/FullPageLoader';
-import Input from '../../components/Input';
-import { useAuthContext } from '../../contexts/AuthContext';
+import FullPageLoader from '@/components/FullPageLoader';
+import Input from '@/components/Input';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -26,12 +26,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
     try {
-      await login(email, password); // optional redirect after success
+      await login(email, password);
+      // Optional: redirect handled inside login or post-login page
     } catch {
       setError('Invalid email or password');
     } finally {
@@ -60,8 +62,12 @@ export default function LoginPage() {
         <Typography variant="h3" fontWeight={800} mb={3}>
           Welcome Back
         </Typography>
-        <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}>
-          Log in to access personalized job matches, apply faster, and manage your professional profile.
+        <Typography
+          variant="h6"
+          sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}
+        >
+          Log in to access personalized job matches, apply faster, and manage
+          your professional profile.
         </Typography>
         <Typography variant="body1" sx={{ opacity: 0.85 }}>
           ✔ Save your favorite jobs <br />
@@ -90,7 +96,12 @@ export default function LoginPage() {
             borderRadius: 4,
           }}
         >
-          <Typography variant="h4" fontWeight={700} mb={3} textAlign="center">
+          <Typography
+            variant="h4"
+            fontWeight={700}
+            mb={3}
+            textAlign="center"
+          >
             Log In to Your Account
           </Typography>
 
@@ -166,13 +177,20 @@ export default function LoginPage() {
                 fontWeight: 600,
                 color: '#1E293B',
                 borderColor: '#CBD5E1',
-                '&:hover': { borderColor: 'primary.main', color: 'primary.main' },
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                },
               }}
             >
               Continue with Google
             </Button>
 
-            <Typography variant="body2" textAlign="center" sx={{ mt: 3 }}>
+            <Typography
+              variant="body2"
+              textAlign="center"
+              sx={{ mt: 3 }}
+            >
               Don’t have an account?{' '}
               <Box
                 component="span"

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Button,
@@ -28,12 +28,12 @@ import {
 } from '@mui/material';
 import dayjs from 'dayjs';
 import axios from 'axios';
-import {useRouter} from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
+// ✅ Step names
 const steps = ['Personal Info', 'Education', 'Experience & Availability', 'Preview'];
 
-
-
+// ✅ Available skills
 const skillsList = [
   'JavaScript',
   'React',
@@ -48,14 +48,13 @@ const skillsList = [
 
 export default function JobseekerOnboarding() {
   const router = useRouter();
+
   const [activeStep, setActiveStep] = useState(0);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
     severity: 'success',
   });
-
-  // const user = localStorage.getItem('user');
 
   // ------------------ Personal Info ------------------
   const [personalInfo, setPersonalInfo] = useState({
@@ -82,7 +81,7 @@ export default function JobseekerOnboarding() {
     documentsPreview: [] as string[],
   });
 
-  // ------------------ Experience & Availability ------------------
+  // ------------------ Experience ------------------
   const [experience, setExperience] = useState({
     skills: [] as string[],
     years: '',
@@ -92,45 +91,39 @@ export default function JobseekerOnboarding() {
   });
 
   // ------------------ Validation Helper ------------------
-  const isAbove15 = (dob: string) => {
-    const age = dayjs().diff(dayjs(dob), 'year');
-    return age >= 15;
-  };
+  const isAbove15 = (dob: string) => dayjs().diff(dayjs(dob), 'year') >= 15;
 
   // ------------------ Handlers ------------------
   const handleNext = () => {
     if (activeStep === 0) {
-      if (!personalInfo.fatherName || !personalInfo.dob || !isAbove15(personalInfo.dob)) {
-        setSnackbar({
+      if (!personalInfo.fullName || !personalInfo.fatherName || !isAbove15(personalInfo.dob)) {
+        return setSnackbar({
           open: true,
-          message: 'Please fill all personal details correctly (age must be 15+)',
+          message: 'Please fill personal details correctly (age must be 15+)',
           severity: 'error',
         });
-        return;
       }
     }
-    if (activeStep === 1) {
-      if (!education.qualification) {
-        setSnackbar({ open: true, message: 'Please select qualification', severity: 'error' });
-        return;
-      }
+    if (activeStep === 1 && !education.qualification) {
+      return setSnackbar({ open: true, message: 'Please select qualification', severity: 'error' });
     }
-    if (activeStep === 2) {
-      if (experience.skills.length === 0 || !experience.jobType) {
-        setSnackbar({
-          open: true,
-          message: 'Please fill skills and job preferences',
-          severity: 'error',
-        });
-        return;
-      }
+    if (activeStep === 2 && (experience.skills.length === 0 || !experience.jobType)) {
+      return setSnackbar({
+        open: true,
+        message: 'Please fill skills and job preferences',
+        severity: 'error',
+      });
     }
     setActiveStep((prev) => prev + 1);
   };
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: string, multiple = false) => {
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: string,
+    multiple = false
+  ) => {
     const files = e.target.files;
     if (!files) return;
 
@@ -162,15 +155,21 @@ export default function JobseekerOnboarding() {
   const handleSubmit = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error('Unauthorized');
+
       const payload = {
         skills: experience.skills,
         experience: [experience.years, experience.jobType, experience.availability],
         education: [education.qualification, education.institute, education.passingYear],
       };
 
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`,
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       setSnackbar({
         open: true,
@@ -178,30 +177,30 @@ export default function JobseekerOnboarding() {
         severity: 'success',
       });
 
-      const {user} = response.data;
-
-      if(user.profileCompleted){
-        router.push('/profile/jobseeker')
-      }
+      const { user } = response.data;
+      if (user?.profileCompleted) router.push('/profile/jobseeker');
     } catch (err: any) {
-      console.error(err);
+      console.error('❌ Jobseeker profile submission failed:', err);
       setSnackbar({
         open: true,
-        message: 'Failed to submit profile.',
+        message: err.response?.data?.message || 'Failed to submit profile.',
         severity: 'error',
       });
     }
   };
 
-  // ------------------ UI Renderers ------------------
+  // ------------------ UI Sections ------------------
   const renderPersonalInfo = () => (
     <Grid container spacing={3}>
-      <Grid size={{xs:12, md: 6}}>
-        <TextField fullWidth label="Full Name" value={personalInfo.fullName} 
-        onChange={(e) => setPersonalInfo({...personalInfo, fullName: e.target.value})}
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField
+          fullWidth
+          label="Full Name"
+          value={personalInfo.fullName}
+          onChange={(e) => setPersonalInfo({ ...personalInfo, fullName: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
           label="Father's Name"
@@ -209,7 +208,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setPersonalInfo({ ...personalInfo, fatherName: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
           type="date"
@@ -219,7 +218,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setPersonalInfo({ ...personalInfo, dob: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           select
           fullWidth
@@ -232,7 +231,7 @@ export default function JobseekerOnboarding() {
           <MenuItem value="other">Other</MenuItem>
         </TextField>
       </Grid>
-      <Grid size={{xs:12}}>
+      <Grid size={{ xs: 12 }}>
         <TextField
           fullWidth
           multiline
@@ -241,7 +240,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setPersonalInfo({ ...personalInfo, address: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
           label="City"
@@ -249,7 +248,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setPersonalInfo({ ...personalInfo, city: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
           label="State"
@@ -257,7 +256,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setPersonalInfo({ ...personalInfo, state: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
           label="Pincode"
@@ -265,7 +264,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setPersonalInfo({ ...personalInfo, pincode: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12}} textAlign="center">
+      <Grid size={{ xs: 12 }} textAlign="center">
         <Button variant="contained" component="label">
           Upload Photo
           <input hidden accept="image/*" type="file" onChange={(e) => handleFileChange(e, 'photo')} />
@@ -283,7 +282,7 @@ export default function JobseekerOnboarding() {
 
   const renderEducation = () => (
     <Grid container spacing={3}>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           select
           fullWidth
@@ -301,7 +300,7 @@ export default function JobseekerOnboarding() {
       </Grid>
       {education.qualification !== 'Below 10th' && (
         <>
-          <Grid size={{xs:12, md: 6}}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Institute Name"
@@ -309,7 +308,7 @@ export default function JobseekerOnboarding() {
               onChange={(e) => setEducation({ ...education, institute: e.target.value })}
             />
           </Grid>
-          <Grid size={{xs:12, md: 6}}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TextField
               fullWidth
               label="Year of Passing"
@@ -317,7 +316,7 @@ export default function JobseekerOnboarding() {
               onChange={(e) => setEducation({ ...education, passingYear: e.target.value })}
             />
           </Grid>
-          <Grid size={{xs:12}}>
+          <Grid size={{ xs: 12 }}>
             <Button variant="outlined" component="label">
               Upload Resume
               <input hidden accept=".pdf" type="file" onChange={(e) => handleFileChange(e, 'resume')} />
@@ -326,10 +325,16 @@ export default function JobseekerOnboarding() {
               <Typography sx={{ mt: 1, fontSize: 14 }}>{education.resume?.name}</Typography>
             )}
           </Grid>
-          <Grid size={{xs:12}}>
+          <Grid size={{ xs: 12 }}>
             <Button variant="outlined" component="label">
               Upload Documents
-              <input hidden multiple accept=".pdf,image/*" type="file" onChange={(e) => handleFileChange(e, 'documents', true)} />
+              <input
+                hidden
+                multiple
+                accept=".pdf,image/*"
+                type="file"
+                onChange={(e) => handleFileChange(e, 'documents', true)}
+              />
             </Button>
             <Stack direction="row" spacing={2} mt={2}>
               {education.documentsPreview.map((src, idx) => (
@@ -344,7 +349,7 @@ export default function JobseekerOnboarding() {
 
   const renderExperience = () => (
     <Grid container spacing={3}>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <FormControl fullWidth>
           <InputLabel>Skills</InputLabel>
           <Select
@@ -368,7 +373,7 @@ export default function JobseekerOnboarding() {
           </Select>
         </FormControl>
       </Grid>
-      <Grid size={{xs:12, md: 4}}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <TextField
           fullWidth
           label="Years of Experience"
@@ -376,7 +381,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setExperience({ ...experience, years: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 4}}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <TextField
           select
           fullWidth
@@ -389,7 +394,7 @@ export default function JobseekerOnboarding() {
           <MenuItem value="Remote">Remote</MenuItem>
         </TextField>
       </Grid>
-      <Grid size={{xs:12, md: 4}}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <TextField
           fullWidth
           label="Weekly Availability (hrs)"
@@ -397,7 +402,7 @@ export default function JobseekerOnboarding() {
           onChange={(e) => setExperience({ ...experience, availability: e.target.value })}
         />
       </Grid>
-      <Grid size={{xs:12, md: 6}}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
           label="Expected Salary (per hour)"
@@ -443,6 +448,7 @@ export default function JobseekerOnboarding() {
     </Box>
   );
 
+  // ------------------ Render ------------------
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
       <Typography variant="h4" fontWeight="bold" mb={4} textAlign="center">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import {
   Container,
@@ -12,15 +12,26 @@ import {
   TextField,
   Stack,
 } from '@mui/material';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { useAuthContext } from '../../../contexts/AuthContext';
 
+// ---- Types ----
+interface Job {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  salary?: string;
+  tags?: string[];
+}
+
 export default function JobDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { token, user } = useAuthContext();
 
-  const [job, setJob] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [job, setJob] = useState<Job | null>(null);
+  const [loading, setLoading] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -29,17 +40,22 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     const fetchJob = async () => {
+      if (!id) return;
       setLoading(true);
       try {
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}`);
+        const res = await axios.get<{ job: Job }>(
+          `${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}`
+        );
         setJob(res.data.job);
-      } catch (err) {
-        console.error(err);
+      } catch (err: unknown) {
+        const error = err as AxiosError;
+        console.error('Failed to fetch job:', error.message);
       } finally {
         setLoading(false);
       }
     };
-    if (id) fetchJob();
+
+    fetchJob();
   }, [id]);
 
   const handleApplyOpen = () => {
@@ -58,8 +74,10 @@ export default function JobDetailPage() {
       setError('Cover letter is required');
       return;
     }
+
     setSubmitting(true);
     setError(null);
+
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}/apply`,
@@ -68,7 +86,9 @@ export default function JobDetailPage() {
       );
       setSuccessMsg('Application submitted successfully!');
       setCoverLetter('');
-    } catch (err) {
+    } catch (err: unknown) {
+      const error = err as AxiosError;
+      console.error('Application failed:', error.message);
       setError('Failed to submit application');
     } finally {
       setSubmitting(false);
@@ -100,7 +120,7 @@ export default function JobDetailPage() {
         {job.company} — {job.location}
       </Typography>
       <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-        {job.tags?.map((tag: string) => (
+        {job.tags?.map((tag) => (
           <Chip key={tag} label={tag} />
         ))}
       </Stack>
