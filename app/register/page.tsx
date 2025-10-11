@@ -18,6 +18,7 @@ import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import Input from '../../components/Input';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import FullPageLoader from '@/components/FullPageLoader';
 
 export default function RegisterPage() {
   const { register } = useAuthContext();
@@ -51,6 +52,8 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (loading) return <FullPageLoader message="Signing you up..." />
 
   return (
     <Grid container sx={{ minHeight: '100vh' }}>

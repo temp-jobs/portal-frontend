@@ -22,6 +22,8 @@ import {
 import axios from 'axios';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
+import FullPageLoader from '../../../components/FullPageLoader';
+import { useRouter } from 'next/navigation'
 
 interface PostedJob {
   id: string;
@@ -32,6 +34,8 @@ interface PostedJob {
 }
 
 export default function EmployerProfilePage() {
+
+  const router = useRouter();
   const { user, token } = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -44,11 +48,19 @@ export default function EmployerProfilePage() {
     companyName: '',
     companyWebsite: '',
     companyDescription: '',
+    companyIndustry: '',
+    companyLocation: '',
+    companySize: '',
     email: '',
   });
 
+  // Fetch employer profile
   useEffect(() => {
     if (!token) return;
+
+    // if (!user?.profileCompleted) {
+    //   router.push('/onboarding/employer')
+    // }
 
     const fetchProfile = async () => {
       setLoading(true);
@@ -58,14 +70,18 @@ export default function EmployerProfilePage() {
         });
         const profileData = res.data;
         setProfile(profileData);
-        setPostedJobs(res.data.postedJobs || []);
+        setPostedJobs(profileData.postedJobs || []);
         setForm({
           companyName: profileData.companyName || '',
           companyWebsite: profileData.companyWebsite || '',
           companyDescription: profileData.companyDescription || '',
+          companyIndustry: profileData.companyIndustry || '',
+          companyLocation: profileData.companyLocation || '',
+          companySize: profileData.companySize || '',
           email: profileData.email || '',
         });
-      } catch {
+      } catch (err) {
+        console.error(err);
         setError('Failed to load profile');
       } finally {
         setLoading(false);
@@ -75,6 +91,7 @@ export default function EmployerProfilePage() {
     fetchProfile();
   }, [token]);
 
+  // Save profile changes
   const handleSave = async () => {
     setError(null);
     setSuccess(null);
@@ -92,18 +109,23 @@ export default function EmployerProfilePage() {
           companyName: form.companyName,
           companyWebsite: form.companyWebsite,
           companyDescription: form.companyDescription,
+          companyIndustry: form.companyIndustry,
+          companyLocation: form.companyLocation,
+          companySize: form.companySize,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSuccess('Profile updated successfully');
       setIsEditing(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setError('Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
 
+  // Delete posted job
   const handleDeleteJob = async (jobId: string) => {
     if (!confirm('Are you sure you want to delete this job?')) return;
     try {
@@ -117,17 +139,13 @@ export default function EmployerProfilePage() {
   };
 
   if (loading && !profile) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <FullPageLoader message="Please wait..." />;
   }
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
       <Typography variant="h4" fontWeight="bold" mb={4}>
-        🏢 Welcome to your Profile
+        🏢 Welcome to your Employer Profile
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -166,7 +184,7 @@ export default function EmployerProfilePage() {
             label={profile?.role || 'Employer'}
             color="primary"
             variant="outlined"
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, textTransform: 'capitalize' }}
           />
         </Box>
         <Box>
@@ -190,7 +208,7 @@ export default function EmployerProfilePage() {
             Company Information
           </Typography>
           <Grid container spacing={2}>
-            <Grid size={{xs: 12, sm: 6}}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Company Name"
                 fullWidth
@@ -200,7 +218,8 @@ export default function EmployerProfilePage() {
                 margin="normal"
               />
             </Grid>
-            <Grid size={{xs: 12, sm: 6}}>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Email"
                 fullWidth
@@ -209,9 +228,43 @@ export default function EmployerProfilePage() {
                 margin="normal"
               />
             </Grid>
-            <Grid size={{xs: 12}}>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
-                label="Company Website"
+                label="Industry (Optional)"
+                fullWidth
+                value={form.companyIndustry}
+                onChange={(e) => setForm({ ...form, companyIndustry: e.target.value })}
+                disabled={!isEditing || loading}
+                margin="normal"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Company Size (Optional)"
+                fullWidth
+                value={form.companySize}
+                onChange={(e) => setForm({ ...form, companySize: e.target.value })}
+                disabled={!isEditing || loading}
+                margin="normal"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Company Location"
+                fullWidth
+                value={form.companyLocation}
+                onChange={(e) => setForm({ ...form, companyLocation: e.target.value })}
+                disabled={!isEditing || loading}
+                margin="normal"
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                label="Company Website (Optional)"
                 fullWidth
                 value={form.companyWebsite}
                 onChange={(e) => setForm({ ...form, companyWebsite: e.target.value })}
@@ -220,7 +273,8 @@ export default function EmployerProfilePage() {
                 margin="normal"
               />
             </Grid>
-            <Grid size={{xs: 12}}>
+
+            <Grid size={{ xs: 12 }}>
               <TextField
                 label="Company Description"
                 fullWidth

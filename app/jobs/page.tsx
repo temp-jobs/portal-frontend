@@ -190,7 +190,7 @@ export default function JobsPage() {
 
       <Grid container spacing={4}>
         {/* Sidebar Filters */}
-        <Grid item xs={12} md={3}>
+        <Grid size={{ xs: 12, md: 3 }}>
           <Paper elevation={0} sx={{ p: 3, borderRadius: 2, boxShadow: 1 }}>
             <Typography variant="h6" fontWeight="bold" mb={2}>
               Filters
@@ -239,7 +239,7 @@ export default function JobsPage() {
         </Grid>
 
         {/* Job Listings */}
-        <Grid item xs={12} md={9}>
+        <Grid size={{ xs: 12, md: 9 }}>
           <Typography variant="h5" fontWeight="bold" mb={2}>
             {loading
               ? 'Loading jobs...'
