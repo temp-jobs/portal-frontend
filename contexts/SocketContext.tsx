@@ -15,12 +15,13 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setSocket(null);
       return;
     }
+
     const socketIo = io(process.env.NEXT_PUBLIC_SOCKET_URL || '', {
       auth: { token },
       transports: ['websocket'],
     });
-    setSocket(socketIo);
 
+    setSocket(socketIo);
     return () => {
       socketIo.disconnect();
     };
@@ -31,7 +32,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
 export function useSocket() {
   const context = useContext(SocketContext);
-  if (context === undefined) {
+  if (context === null) { // ✅ FIXED
     throw new Error('useSocket must be used within SocketProvider');
   }
   return context;
