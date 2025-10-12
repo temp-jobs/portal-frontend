@@ -1,9 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
-    "skipLibCheck": false,
+    "skipLibCheck": true, // ✅ Fixes JSX namespace issue in node_modules
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -11,21 +15,31 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "preserve", // ✅ Modern JSX runtime
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
-    "jsxImportSource": "react",
     "plugins": [
       {
         "name": "next"
       }
     ],
+    "types": [
+      "react",
+      "react-dom"
+    ], // ✅ Ensure JSX namespace is available
     "paths": {
       "@/*": [
         "./*"
       ]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
