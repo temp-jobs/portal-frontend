@@ -55,6 +55,8 @@ export default function Header() {
     // setTimeout(() => setLoading(false), 1000); // fallback hide loader
   };
 
+
+
   return (
     <>
       {loading && <FullPageLoader message="Loading..." />} {/* ✅ Loader visible when navigating */}
