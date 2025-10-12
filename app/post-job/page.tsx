@@ -30,7 +30,7 @@ interface JobResponse {
   description: string;
 }
 
-export default function PostJobPage(): JSX.Element {
+export default function PostJobPage() {
   const { user, token } = useAuthContext();
   const router = useRouter();
   const searchParams = useSearchParams();
