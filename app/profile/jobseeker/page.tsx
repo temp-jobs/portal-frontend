@@ -30,6 +30,24 @@ interface AppliedJob {
   status: string;
 }
 
+interface Experience {
+  company?: string;
+  position?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+}
+
+interface Education {
+  level: string;
+  institute?: string;
+  passingYear?: string;
+  marksObtained?: string;
+  totalMarks?: string;
+  percentage?: string;
+  documentUrl?: string;
+}
+
 interface JobseekerProfile {
   id: string;
   name: string;
@@ -37,10 +55,11 @@ interface JobseekerProfile {
   role: string;
   profileCompleted: boolean;
   skills: string[];
-  experience: string[];
-  education: string[];
+  experience: Experience[];
+  education: Education[];
   appliedJobs: AppliedJob[];
 }
+
 
 export default function JobseekerProfilePage() {
   const router = useRouter();
@@ -55,8 +74,8 @@ export default function JobseekerProfilePage() {
   // Editable fields
   const [name, setName] = useState<string>('');
   const [skills, setSkills] = useState<string[]>([]);
-  const [experience, setExperience] = useState<string[]>([]);
-  const [education, setEducation] = useState<string[]>([]);
+  const [experience, setExperience] = useState<Experience[]>([]);
+  const [education, setEducation] = useState<Education[]>([]);
 
   // Fetch Jobseeker profile
   useEffect(() => {
@@ -71,16 +90,48 @@ export default function JobseekerProfilePage() {
         );
 
         const data = res.data;
+
         if (!data.profileCompleted) {
           router.push('/onboarding/jobseeker');
           return;
         }
 
+        // 🧠 Normalize any existing string[] data for backward compatibility
+        const normalizedExperience = Array.isArray(data.experience)
+          ? data.experience.map((exp: any) =>
+            typeof exp === 'string'
+              ? { description: exp }
+              : {
+                company: exp.company || '',
+                position: exp.position || '',
+                startDate: exp.startDate || '',
+                endDate: exp.endDate || '',
+                description: exp.description || '',
+              }
+          )
+          : [];
+
+        const normalizedEducation = Array.isArray(data.education)
+          ? data.education.map((edu: any) =>
+            typeof edu === 'string'
+              ? { level: edu }
+              : {
+                level: edu.level || '',
+                institute: edu.institute || '',
+                passingYear: edu.passingYear || '',
+                marksObtained: edu.marksObtained || '',
+                totalMarks: edu.totalMarks || '',
+                percentage: edu.percentage || '',
+                documentUrl: edu.documentUrl || '',
+              }
+          )
+          : [];
+
         setProfile(data);
         setName(data.name || '');
         setSkills(data.skills || []);
-        setExperience(data.experience || []);
-        setEducation(data.education || []);
+        setExperience(normalizedExperience);
+        setEducation(normalizedEducation);
       } catch (err) {
         const axiosErr = err as AxiosError;
         console.error('Profile fetch error:', axiosErr);
@@ -93,6 +144,7 @@ export default function JobseekerProfilePage() {
     fetchProfile();
   }, [token, router]);
 
+
   const handleSave = async (): Promise<void> => {
     setError(null);
     setSuccess(null);
@@ -104,11 +156,43 @@ export default function JobseekerProfilePage() {
 
     setLoading(true);
     try {
+      // 🧠 Normalize experience + education for backend
+      const formattedExperience = Array.isArray(experience)
+        ? experience.map((exp: any) =>
+          typeof exp === 'string'
+            ? { description: exp }
+            : {
+              company: exp.company || '',
+              position: exp.position || '',
+              startDate: exp.startDate || '',
+              endDate: exp.endDate || '',
+              description: exp.description || '',
+            }
+        )
+        : [];
+
+      const formattedEducation = Array.isArray(education)
+        ? education.map((edu: any) =>
+          typeof edu === 'string'
+            ? { level: edu }
+            : {
+              level: edu.level || '',
+              institute: edu.institute || '',
+              passingYear: edu.passingYear || '',
+              marksObtained: edu.marksObtained || '',
+              totalMarks: edu.totalMarks || '',
+              percentage: edu.percentage || '',
+              documentUrl: edu.documentUrl || '',
+            }
+        )
+        : [];
+
       await axios.put(
         `${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`,
-        { name, skills, experience, education },
+        { name, skills, experience: formattedExperience, education: formattedEducation },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       setSuccess('Profile updated successfully');
       setIsEditing(false);
     } catch (err) {
@@ -118,6 +202,7 @@ export default function JobseekerProfilePage() {
       setLoading(false);
     }
   };
+
 
   if (loading && !profile) return <FullPageLoader message="Please wait..." />;
 
@@ -240,31 +325,108 @@ export default function JobseekerProfilePage() {
           <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Experience
           </Typography>
-          <Grid container spacing={2}>
-            {['Type', 'Work Mode', 'Availability'].map((label, idx) => (
-              <Grid key={label} size={{ xs: 12, sm: 6 }}>
-                {isEditing ? (
-                  <TextField
-                    label={label}
-                    fullWidth
-                    value={experience[idx] || ''}
-                    onChange={(e) => {
-                      const newExp = [...experience];
-                      newExp[idx] = e.target.value;
-                      setExperience(newExp);
-                    }}
-                    margin="normal"
-                  />
-                ) : (
-                  <Typography>
-                    <strong>{label}:</strong> {experience[idx] || 'N/A'}
-                  </Typography>
-                )}
-              </Grid>
-            ))}
-          </Grid>
+
+          {!experience.length ? (
+            <Typography color="text.secondary">No experience added yet.</Typography>
+          ) : (
+            experience.map((exp, index) => (
+              <Box key={index} sx={{ mb: 3, p: 2, border: '1px solid #eee', borderRadius: 1 }}>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Company"
+                      fullWidth
+                      value={exp.company || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newExp = [...experience];
+                        newExp[index] = { ...newExp[index], company: e.target.value };
+                        setExperience(newExp);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Position"
+                      fullWidth
+                      value={exp.position || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newExp = [...experience];
+                        newExp[index] = { ...newExp[index], position: e.target.value };
+                        setExperience(newExp);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Start Date"
+                      type="date"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      value={exp.startDate || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newExp = [...experience];
+                        newExp[index] = { ...newExp[index], startDate: e.target.value };
+                        setExperience(newExp);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="End Date"
+                      type="date"
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      value={exp.endDate || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newExp = [...experience];
+                        newExp[index] = { ...newExp[index], endDate: e.target.value };
+                        setExperience(newExp);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      label="Description"
+                      fullWidth
+                      multiline
+                      rows={3}
+                      value={exp.description || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newExp = [...experience];
+                        newExp[index] = { ...newExp[index], description: e.target.value };
+                        setExperience(newExp);
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            ))
+          )}
+
+          {isEditing && (
+            <Button
+              variant="outlined"
+              color="primary"
+              sx={{ mt: 2 }}
+              onClick={() =>
+                setExperience([
+                  ...experience,
+                  { company: '', position: '', startDate: '', endDate: '', description: '' },
+                ])
+              }
+            >
+              + Add Experience
+            </Button>
+          )}
         </CardContent>
       </Card>
+
+
 
       {/* --- Education Section --- */}
       <Card elevation={2} sx={{ borderRadius: 1, mb: 4 }}>
@@ -272,31 +434,121 @@ export default function JobseekerProfilePage() {
           <Typography variant="h6" fontWeight={600} mb={2} color="primary">
             Education
           </Typography>
-          <Grid container spacing={2}>
-            {['Qualification', 'Institute', 'Passing Year'].map((label, idx) => (
-              <Grid key={label} size={{ xs: 12, sm: 6 }}>
-                {isEditing ? (
-                  <TextField
-                    label={label}
-                    fullWidth
-                    value={education[idx] || ''}
-                    onChange={(e) => {
-                      const newEdu = [...education];
-                      newEdu[idx] = e.target.value;
-                      setEducation(newEdu);
-                    }}
-                    margin="normal"
-                  />
-                ) : (
-                  <Typography>
-                    <strong>{label}:</strong> {education[idx] || 'N/A'}
-                  </Typography>
-                )}
-              </Grid>
-            ))}
-          </Grid>
+
+          {!education.length ? (
+            <Typography color="text.secondary">No education added yet.</Typography>
+          ) : (
+            education.map((edu, index) => (
+              <Box key={index} sx={{ mb: 3, p: 2, border: '1px solid #eee', borderRadius: 1 }}>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Qualification"
+                      fullWidth
+                      value={edu.level || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newEdu = [...education];
+                        newEdu[index] = { ...newEdu[index], level: e.target.value };
+                        setEducation(newEdu);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Institute"
+                      fullWidth
+                      value={edu.institute || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newEdu = [...education];
+                        newEdu[index] = { ...newEdu[index], institute: e.target.value };
+                        setEducation(newEdu);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Passing Year"
+                      fullWidth
+                      value={edu.passingYear || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newEdu = [...education];
+                        newEdu[index] = { ...newEdu[index], passingYear: e.target.value };
+                        setEducation(newEdu);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Marks Obtained"
+                      fullWidth
+                      value={edu.marksObtained || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newEdu = [...education];
+                        newEdu[index] = { ...newEdu[index], marksObtained: e.target.value };
+                        setEducation(newEdu);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Total Marks"
+                      fullWidth
+                      value={edu.totalMarks || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newEdu = [...education];
+                        newEdu[index] = { ...newEdu[index], totalMarks: e.target.value };
+                        setEducation(newEdu);
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                    <TextField
+                      label="Percentage"
+                      fullWidth
+                      value={edu.percentage || ''}
+                      disabled={!isEditing}
+                      onChange={(e) => {
+                        const newEdu = [...education];
+                        newEdu[index] = { ...newEdu[index], percentage: e.target.value };
+                        setEducation(newEdu);
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            ))
+          )}
+
+          {isEditing && (
+            <Button
+              variant="outlined"
+              color="primary"
+              sx={{ mt: 2 }}
+              onClick={() =>
+                setEducation([
+                  ...education,
+                  {
+                    level: '',
+                    institute: '',
+                    passingYear: '',
+                    marksObtained: '',
+                    totalMarks: '',
+                    percentage: '',
+                  },
+                ])
+              }
+            >
+              + Add Education
+            </Button>
+          )}
         </CardContent>
       </Card>
+
 
       {/* --- Applied Jobs Section --- */}
       <Card elevation={2} sx={{ borderRadius: 1 }}>

@@ -116,44 +116,54 @@ export default function JobseekerOnboarding() {
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Unauthorized');
+      try {
+          const token = localStorage.getItem('token');
+          if (!token) throw new Error('Unauthorized');
 
+      // 🧠 Correct payload format for new schema
       const payload = {
-        personalInfo,
-        education,
-        skills: experience.skills,
-        experience: [experience.years, experience.jobType, experience.availability],
+          personalInfo,
+          education,
+          skills: experience.skills,
+        experience: [
+            {
+                company: '',
+                position: '',
+                startDate: '',
+                endDate: '',
+                description: `${experience.years} (${experience.jobType}, ${experience.availability} hrs/week)`,
+            },
+        ],
         expectedSalary: experience.expectedSalary,
-      };
+    };
 
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
       });
 
       setUser((prev) => {
-        const updated = prev ? { ...prev, profileCompleted: true } : prev;
-        if (updated) localStorage.setItem('user', JSON.stringify(updated));
-        return updated;
+          const updated = prev ? { ...prev, profileCompleted: true } : prev;
+          if (updated) localStorage.setItem('user', JSON.stringify(updated));
+          return updated;
       });
 
       setSnackbar({
-        open: true,
-        message: 'Profile created successfully!',
-        severity: 'success',
+          open: true,
+          message: 'Profile created successfully!',
+          severity: 'success',
       });
 
-      setTimeout(() => router.push('/profile/jobseeker'), 1000);
-    } catch (err: any) {
-      console.error('❌ Jobseeker profile submission failed:', err);
-      setSnackbar({
-        open: true,
-        message: err.response?.data?.message || 'Failed to submit profile.',
-        severity: 'error',
-      });
-    }
+          setTimeout(() => router.push('/profile/jobseeker'), 1000);
+      } catch (err: any) {
+          console.error('❌ Jobseeker profile submission failed:', err);
+          setSnackbar({
+              open: true,
+              message: err.response?.data?.message || 'Failed to submit profile.',
+              severity: 'error',
+          });
+      }
   };
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
