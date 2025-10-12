@@ -42,7 +42,7 @@ interface JobseekerProfile {
   appliedJobs: AppliedJob[];
 }
 
-export default function JobseekerProfilePage(): JSX.Element {
+export default function JobseekerProfilePage() {
   const router = useRouter();
   const { token } = useAuthContext();
 
