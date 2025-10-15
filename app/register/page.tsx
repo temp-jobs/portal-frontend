@@ -12,6 +12,7 @@ import {
   ToggleButton,
   Divider,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -21,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import FullPageLoader from '@/components/FullPageLoader';
 
 export default function RegisterPage() {
+  const theme = useTheme();
   const { register } = useAuthContext();
   const router = useRouter();
 
@@ -68,8 +70,8 @@ export default function RegisterPage() {
       <Grid
         size={{ xs: 12, md: 6 }}
         sx={{
-          background: 'linear-gradient(135deg, #6fda44 0%, #3ac569 100%)',
-          color: '#fff',
+          background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+          color: theme.palette.common.white,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -78,7 +80,14 @@ export default function RegisterPage() {
         }}
       >
         <Typography variant="h3" fontWeight={800} mb={3}>
-          Join <Box component="span" color="#fff">Part Time Match</Box>
+          Join{' '}
+          <Typography
+            component="span"
+            color={theme.palette.common.white}
+            fontWeight={800}
+          >
+            Part Time Match
+          </Typography>
         </Typography>
         <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}>
           Whether you’re looking for flexible work or hiring top part-time talent — our platform connects the right people, faster.
@@ -98,7 +107,7 @@ export default function RegisterPage() {
           alignItems: 'center',
           justifyContent: 'center',
           p: { xs: 4, md: 8 },
-          bgcolor: 'background.default',
+          bgcolor: theme.palette.background.default,
         }}
       >
         <Paper
@@ -127,6 +136,18 @@ export default function RegisterPage() {
                 textTransform: 'none',
                 fontWeight: 600,
                 p: 1.5,
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.divider,
+                '&.Mui-selected': {
+                  backgroundColor: theme.palette.primary.main,
+                  color: theme.palette.common.white,
+                  '&:hover': {
+                    backgroundColor: theme.palette.primary.dark,
+                  },
+                },
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover,
+                },
               },
             }}
           >
@@ -230,7 +251,7 @@ export default function RegisterPage() {
               <Box
                 component="span"
                 sx={{
-                  color: 'primary.main',
+                  color: theme.palette.primary.main,
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}

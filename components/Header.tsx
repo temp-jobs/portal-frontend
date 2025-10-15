@@ -1,13 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   AppBar,
   Toolbar,
-  Typography,
-  Button,
   Box,
   IconButton,
   Menu,
@@ -16,12 +13,12 @@ import {
   Divider,
   useScrollTrigger,
   Slide,
+  useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useAuthContext } from '../contexts/AuthContext';
-import FullPageLoader from './FullPageLoader'; // ✅ Import your loader component
+import FullPageLoader from './FullPageLoader';
 
-// Hide AppBar when scrolling down
 function HideOnScroll({ children }: { children: React.ReactElement }) {
   const trigger = useScrollTrigger();
   return (
@@ -34,9 +31,12 @@ function HideOnScroll({ children }: { children: React.ReactElement }) {
 export default function Header() {
   const { user, logout } = useAuthContext();
   const router = useRouter();
+  const pathname = usePathname();
+  const theme = useTheme();
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null);
-  const [loading, setLoading] = useState(false); // ✅ Loader state
+  const [loading, setLoading] = useState(false);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -47,19 +47,49 @@ export default function Header() {
   const isJobseeker = user?.role === 'jobseeker';
   const isEmployer = user?.role === 'employer';
 
-  // ✅ Universal navigation handler with loader
-  const navigateWithLoader = async (path: string) => {
-    // setLoading(true);
-    // await new Promise((resolve) => setTimeout(resolve, 100)); // tiny UX delay
-    router.push(path);
-    // setTimeout(() => setLoading(false), 1000); // fallback hide loader
+  const navigateWithLoader = (path: string) => router.push(path);
+
+  // Active and inactive styles
+  const activeButtonStyles = {
+    color: '#fff',
+    fontWeight: 600,
+    textTransform: 'none',
+    px: 2,
+    py: 0.7,
+    borderRadius: 20,
+    bgcolor: theme.palette.primary.main,
+    border: `1px solid ${theme.palette.primary.main}`,
+    boxShadow: '0px 4px 8px rgba(0,0,0,0.1)',
+    transition: 'all 0.3s ease',
+    cursor: 'pointer',
+    '&:hover': {
+      bgcolor: theme.palette.primary.dark,
+      border: `1px solid ${theme.palette.primary.dark}`,
+      transform: 'scale(1.05)',
+    },
   };
 
+  const textStyles = {
+    color: theme.palette.text.primary,
+    fontWeight: 600,
+    textTransform: 'none',
+    cursor: 'pointer',
+    px: 1,
+    py: 0.7,
+    borderRadius: 20,
+    transition: 'all 0.3s ease',
+    '&:hover': {
+      color: theme.palette.primary.main,
+      transform: 'scale(1.05)',
+    },
+  };
 
+  const getLinkStyle = (path: string) =>
+    pathname === path ? activeButtonStyles : textStyles;
 
   return (
     <>
-      {loading && <FullPageLoader message="Loading..." />} {/* ✅ Loader visible when navigating */}
+      {loading && <FullPageLoader message="Loading..." />}
 
       <HideOnScroll>
         <AppBar
@@ -82,17 +112,10 @@ export default function Header() {
             }}
           >
             {/* Logo */}
-            <Typography
-              variant="h6"
+            <Box
               component="button"
-              onClick={() => {
-                if (isJobseeker || isEmployer) {
-                  navigateWithLoader('/dashboard')
-                } else {
-                  navigateWithLoader('/')
-                }
-              }} // ✅ Added loader on logo click
-              style={{
+              onClick={() => navigateWithLoader(user ? '/dashboard' : '/')}
+              sx={{
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
@@ -103,80 +126,60 @@ export default function Header() {
               }}
             >
               Part Time Match
-            </Typography>
+            </Box>
 
             {/* Desktop Menu */}
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
+            <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2 }}>
               {user ? (
                 <>
-                  {
-                    user?.profileCompleted && (
+                  {user?.profileCompleted && (
+                    <Box
+                      component={pathname === '/dashboard' ? 'button' : 'span'}
+                      onClick={() => navigateWithLoader('/dashboard')}
+                      sx={getLinkStyle('/dashboard')}
+                    >
+                      Dashboard
+                    </Box>
+                  )}
 
-                      <>
-                        <Button
-                          onClick={() => navigateWithLoader('/dashboard')}
-                          sx={{
-                            fontWeight: 600,
-                            color: 'text.primary',
-                            '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                          }}
-                        >
-                          Dashboard
-                        </Button>
-                      </>
-                    )
-                  }
                   {isJobseeker && user?.profileCompleted && (
                     <>
-                      <Button
+                      <Box
+                        component={pathname === '/jobs' ? 'button' : 'span'}
                         onClick={() => navigateWithLoader('/jobs')}
-                        sx={{
-                          fontWeight: 600,
-                          color: 'text.primary',
-                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                        }}
+                        sx={getLinkStyle('/jobs')}
                       >
                         Find Jobs
-                      </Button>
-                      <Button
+                      </Box>
+                      <Box
+                        component={pathname === '/profile/jobseeker' ? 'button' : 'span'}
                         onClick={() => navigateWithLoader('/profile/jobseeker')}
-                        sx={{
-                          fontWeight: 600,
-                          color: 'text.primary',
-                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                        }}
+                        sx={getLinkStyle('/profile/jobseeker')}
                       >
                         Profile
-                      </Button>
+                      </Box>
                     </>
                   )}
 
                   {isEmployer && user?.profileCompleted && (
                     <>
-                      <Button
+                      <Box
+                        component={pathname === '/post-job' ? 'button' : 'span'}
                         onClick={() => navigateWithLoader('/post-job')}
-                        sx={{
-                          fontWeight: 600,
-                          color: 'text.primary',
-                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                        }}
+                        sx={getLinkStyle('/post-job')}
                       >
                         Post Job
-                      </Button>
-                      <Button
+                      </Box>
+                      <Box
+                        component={pathname === '/profile/employer' ? 'button' : 'span'}
                         onClick={() => navigateWithLoader('/profile/employer')}
-                        sx={{
-                          fontWeight: 600,
-                          color: 'text.primary',
-                          '&:hover': { color: 'primary.main', bgcolor: 'transparent' },
-                        }}
+                        sx={getLinkStyle('/profile/employer')}
                       >
                         Profile
-                      </Button>
+                      </Box>
                     </>
                   )}
 
-                  {/* Avatar dropdown */}
                   <Avatar
                     alt={user.name || 'User'}
                     sx={{
@@ -193,10 +196,7 @@ export default function Header() {
                     anchorEl={profileAnchorEl}
                     open={Boolean(profileAnchorEl)}
                     onClose={handleProfileMenuClose}
-                    PaperProps={{
-                      elevation: 3,
-                      sx: { mt: 1.5, minWidth: 180, borderRadius: 1 },
-                    }}
+                    PaperProps={{ elevation: 3, sx: { mt: 1.5, minWidth: 180, borderRadius: 1 } }}
                   >
                     <MenuItem
                       onClick={() => {
@@ -210,30 +210,22 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  <Button
-                      onClick={() => navigateWithLoader('/login')}
-                      sx={{
-                        color: 'text.primary',
-                        fontWeight: 600,
-                        '&:hover': { color: 'primary.main' },
-                      }}
-                    >
-                      Login
-                    </Button>
-                    <Button
-                      onClick={() => navigateWithLoader('/register')}
-                      variant="contained"
-                      color="primary"
-                      sx={{
-                        borderRadius: 6,
-                        px: 3,
-                        py: 1,
-                        fontWeight: 600,
-                      }}
-                    >
-                      Sign Up
-                    </Button>
-                  </>
+                  <Box
+                    component={pathname === '/login' ? 'button' : 'span'}
+                    onClick={() => navigateWithLoader('/login')}
+                    sx={getLinkStyle('/login')}
+                  >
+                    Login
+                  </Box>
+
+                  <Box
+                    component={pathname === '/register' ? 'button' : 'span'}
+                    onClick={() => navigateWithLoader('/register')}
+                    sx={getLinkStyle('/register')}
+                  >
+                    Sign Up
+                  </Box>
+                </>
               )}
             </Box>
 
@@ -247,56 +239,28 @@ export default function Header() {
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
-                PaperProps={{
-                  elevation: 3,
-                  sx: {
-                    mt: 1.5,
-                    minWidth: 180,
-                    borderRadius: 2,
-                  },
-                }}
+                PaperProps={{ elevation: 3, sx: { mt: 1.5, minWidth: 180, borderRadius: 2 } }}
               >
                 {user
-                  ? [
-                    ...(isJobseeker
-                      ? [
-                        <MenuItem key="jobs" onClick={() => navigateWithLoader('/jobs')}>
-                          Find Jobs
-                        </MenuItem>,
-                        <MenuItem key="profile-jobseeker" onClick={() => navigateWithLoader('/profile/jobseeker')}>
-                          Profile
-                        </MenuItem>,
-                      ]
-                      : []),
-                    ...(isEmployer
-                      ? [
-                        <MenuItem key="post" onClick={() => navigateWithLoader('/post-job')}>
-                          Post Job
-                        </MenuItem>,
-                        <MenuItem key="profile-employer" onClick={() => navigateWithLoader('/profile/employer')}>
-                          Profile
-                        </MenuItem>,
-                      ]
-                      : []),
-                    <Divider key="divider" />,
-                    <MenuItem
-                      key="logout"
-                      onClick={() => {
-                        logout();
-                        handleMenuClose();
-                      }}
-                    >
-                      Logout
-                    </MenuItem>,
-                  ]
+                  ? []
                   : [
-                    <MenuItem key="login" onClick={() => navigateWithLoader('/login')}>
-                      Login
-                    </MenuItem>,
-                    <MenuItem key="signup" onClick={() => navigateWithLoader('/register')}>
-                      Sign Up
-                    </MenuItem>,
-                  ]}
+                      <MenuItem key="login" onClick={() => navigateWithLoader('/login')}>
+                        <Box
+                          component={pathname === '/login' ? 'button' : 'span'}
+                          sx={getLinkStyle('/login')}
+                        >
+                          Login
+                        </Box>
+                      </MenuItem>,
+                      <MenuItem key="signup" onClick={() => navigateWithLoader('/register')}>
+                        <Box
+                          component={pathname === '/register' ? 'button' : 'span'}
+                          sx={getLinkStyle('/register')}
+                        >
+                          Sign Up
+                        </Box>
+                      </MenuItem>,
+                    ]}
               </Menu>
             </Box>
           </Toolbar>

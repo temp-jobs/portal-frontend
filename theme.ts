@@ -90,7 +90,7 @@ let theme = createTheme({
         },
         containedPrimary: {
           boxShadow: 'none',
-          backgroundColor: '#00A884',
+          backgroundColor: 'rgb(2, 99, 78)',
           '&:hover': {
             backgroundColor: '#00A884',
             boxShadow: '0 4px 20px rgba(111, 218, 68, 0.3)',
