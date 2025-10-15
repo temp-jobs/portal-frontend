@@ -1,27 +1,31 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Grid, Typography, Link, Divider, Stack } from '@mui/material';
+import { Box, Container, Grid, Typography, Link, Stack, IconButton, TextField, Button } from '@mui/material';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import InstagramIcon from '@mui/icons-material/Instagram';
 
 export default function Footer() {
   return (
     <Box
       component="footer"
       sx={{
-        bgcolor: 'background.paper',
+        bgcolor: '#f7f9fa',
         color: 'text.secondary',
         borderTop: '1px solid',
         borderColor: 'divider',
-        mt: 8,
-        pt: 8,
-        pb: 4,
+        mt: 12,
+        pt: 10,
+        pb: 6,
       }}
     >
       <Container maxWidth="lg">
-        {/* Top Grid Links */}
-        <Grid container spacing={4} justifyContent="space-between">
+        {/* Top Grid Links + Newsletter */}
+        <Grid container spacing={6}>
           {/* Company */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{xs:12,sm:6 ,md:3}}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Company
             </Typography>
@@ -35,11 +39,14 @@ export default function Footer() {
               <Link href="/careers" underline="hover" color="inherit">
                 Careers
               </Link>
+              <Link href="/team" underline="hover" color="inherit">
+                Team
+              </Link>
             </Stack>
           </Grid>
 
           {/* Resources */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{xs:12,sm:6 ,md:3}}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Resources
             </Typography>
@@ -53,11 +60,14 @@ export default function Footer() {
               <Link href="/help" underline="hover" color="inherit">
                 Help Center
               </Link>
+              <Link href="/guides" underline="hover" color="inherit">
+                Guides
+              </Link>
             </Stack>
           </Grid>
 
           {/* Legal */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{xs:12,sm:6 ,md:3}}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Legal
             </Typography>
@@ -71,30 +81,71 @@ export default function Footer() {
               <Link href="/cookies" underline="hover" color="inherit">
                 Cookie Policy
               </Link>
+              <Link href="/security" underline="hover" color="inherit">
+                Security
+              </Link>
             </Stack>
           </Grid>
 
-          {/* Socials */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          {/* Newsletter + Socials */}
+          <Grid size={{xs:12,sm:6 ,md:3}}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
-              Follow Us
+              Stay Updated
             </Typography>
-            <Stack spacing={1}>
-              <Link href="https://linkedin.com" target="_blank" underline="hover" color="inherit">
-                LinkedIn
-              </Link>
-              <Link href="https://twitter.com" target="_blank" underline="hover" color="inherit">
-                Twitter / X
-              </Link>
-              <Link href="https://facebook.com" target="_blank" underline="hover" color="inherit">
-                Facebook
-              </Link>
+
+            {/* Newsletter */}
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2}>
+              <TextField
+                placeholder="Your email"
+                size="small"
+                variant="outlined"
+                sx={{ flex: 1, bgcolor: '#fff', borderRadius: 1 }}
+              />
+              <Button variant="contained" color="primary" sx={{ px: 3 }}>
+                Subscribe
+              </Button>
             </Stack>
+
+            {/* Socials */}
+            <Stack direction="row" spacing={1}>
+              <IconButton
+                href="https://linkedin.com"
+                target="_blank"
+                sx={{ color: '#0A66C2', '&:hover': { bgcolor: 'transparent', color: '#004182' } }}
+              >
+                <LinkedInIcon />
+              </IconButton>
+              <IconButton
+                href="https://twitter.com"
+                target="_blank"
+                sx={{ color: '#1DA1F2', '&:hover': { bgcolor: 'transparent', color: '#0d95e8' } }}
+              >
+                <TwitterIcon />
+              </IconButton>
+              <IconButton
+                href="https://facebook.com"
+                target="_blank"
+                sx={{ color: '#1877F2', '&:hover': { bgcolor: 'transparent', color: '#0d47a1' } }}
+              >
+                <FacebookIcon />
+              </IconButton>
+              <IconButton
+                href="https://instagram.com"
+                target="_blank"
+                sx={{ color: '#E1306C', '&:hover': { bgcolor: 'transparent', color: '#b12b5b' } }}
+              >
+                <InstagramIcon />
+              </IconButton>
+            </Stack>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Get our latest updates and offers directly in your inbox.
+            </Typography>
           </Grid>
         </Grid>
 
         {/* Divider */}
-        <Divider sx={{ my: 4 }} />
+        <Box sx={{ borderTop: '1px solid #ddd', my: 6 }} />
 
         {/* Bottom Bar */}
         <Stack
