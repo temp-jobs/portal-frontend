@@ -1,52 +1,49 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import {
-  Container,
-  Typography,
-  Box,
-  Chip,
-  Button,
-  Modal,
-  TextField,
-  Stack,
-} from '@mui/material';
+import { useParams, useRouter } from 'next/navigation';
+import { Container, CircularProgress, Typography, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import axios, { AxiosError } from 'axios';
 import { useAuthContext } from '../../../contexts/AuthContext';
+import JobDetailsCard from './JobDetailsCard';
 
-// ---- Types ----
 interface Job {
-  id: string;
+  _id: string;
   title: string;
-  company: string;
+  companyName?: string;
   location: string;
   description: string;
   salary?: string;
   tags?: string[];
+  postedAt?: string;
+  matchPercentage?: number;
 }
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { token, user } = useAuthContext();
+  const router = useRouter();
 
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
-  const [applyOpen, setApplyOpen] = useState(false);
-  const [coverLetter, setCoverLetter] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogSuccess, setDialogSuccess] = useState(true);
+
+  // Fetch job details
   useEffect(() => {
+    if (!id || !token) return;
     const fetchJob = async () => {
-      if (!id) return;
       setLoading(true);
       try {
-        const res = await axios.get<{ job: Job }>(
-          `${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}`
-        );
-        setJob(res.data.job);
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        const data = res.data.job || res.data;
+        setJob(data);
       } catch (err: unknown) {
         const error = err as AxiosError;
         console.error('Failed to fetch job:', error.message);
@@ -56,140 +53,73 @@ export default function JobDetailPage() {
     };
 
     fetchJob();
-  }, [id]);
+  }, [id, token]);
 
-  const handleApplyOpen = () => {
-    setApplyOpen(true);
-    setCoverLetter('');
-    setError(null);
-    setSuccessMsg(null);
-  };
-
-  const handleApplyClose = () => {
-    setApplyOpen(false);
-  };
-
-  const handleApplySubmit = async () => {
-    if (!coverLetter.trim()) {
-      setError('Cover letter is required');
+  // Apply button handler
+  const handleApply = async (jobId: string) => {
+    if (!user || !token) {
+      setDialogMessage('Please login as a jobseeker to apply.');
+      setDialogSuccess(false);
+      setDialogOpen(true);
       return;
     }
 
-    setSubmitting(true);
-    setError(null);
-
+    setLoading(true);
     try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/jobs/${id}/apply`,
-        { coverLetter },
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/applications/${jobId}/apply`,
+        {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setSuccessMsg('Application submitted successfully!');
-      setCoverLetter('');
+
+      // Show backend message in dialog
+      setDialogMessage(res.data.message || 'Application submitted successfully!');
+      setDialogSuccess(true);
+      setDialogOpen(true);
     } catch (err: unknown) {
       const error = err as AxiosError;
-      console.error('Application failed:', error.message);
-      setError('Failed to submit application');
+      // console.error('Apply failed:', error.message);
+      // Show backend error if available
+      setDialogMessage(
+        (error.response?.data as any)?.message || 'Failed to submit application'
+      );
+      setDialogSuccess(false);
+      setDialogOpen(true);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  if (loading) {
-    return (
-      <Container sx={{ py: 8 }}>
-        <Typography>Loading...</Typography>
-      </Container>
-    );
-  }
+  // Save button handler
+  const handleSave = (jobId: string, save: boolean) => {
+    // TODO: Implement API call to save/unsave job for the user
+    console.log(save ? 'Saved job:' : 'Removed saved job:', jobId);
+  };
 
-  if (!job) {
+  if (loading || !job) {
     return (
-      <Container sx={{ py: 8 }}>
-        <Typography>Job not found.</Typography>
+      <Container sx={{ py: 8, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
       </Container>
     );
   }
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
-      <Typography variant="h3" fontWeight="bold" gutterBottom>
-        {job.title}
-      </Typography>
-      <Typography variant="subtitle1" color="text.secondary" gutterBottom>
-        {job.company} — {job.location}
-      </Typography>
-      <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-        {job.tags?.map((tag) => (
-          <Chip key={tag} label={tag} />
-        ))}
-      </Stack>
-      <Typography variant="body1" paragraph>
-        {job.description}
-      </Typography>
-      {job.salary && (
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
-          Salary: {job.salary}
-        </Typography>
-      )}
+      <JobDetailsCard job={job} onApply={handleApply} onSave={handleSave} />
 
-      {user && user.role === 'jobseeker' ? (
-        <Button variant="contained" color="primary" onClick={handleApplyOpen}>
-          Apply Now
-        </Button>
-      ) : (
-        <Typography color="error" mt={2}>
-          You must be logged in as a jobseeker to apply.
-        </Typography>
-      )}
-
-      <Modal open={applyOpen} onClose={handleApplyClose}>
-        <Box
-          sx={{
-            position: 'absolute' as const,
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            width: { xs: '90%', sm: 400 },
-            borderRadius: 2,
-          }}
-        >
-          <Typography variant="h6" mb={2}>
-            Submit Your Application
-          </Typography>
-          <TextField
-            label="Cover Letter"
-            multiline
-            minRows={4}
-            maxRows={8}
-            fullWidth
-            value={coverLetter}
-            onChange={(e) => setCoverLetter(e.target.value)}
-            disabled={submitting}
-          />
-          {error && (
-            <Typography color="error" mt={1}>
-              {error}
-            </Typography>
-          )}
-          {successMsg && (
-            <Typography color="success.main" mt={1}>
-              {successMsg}
-            </Typography>
-          )}
-          <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
-            <Button onClick={handleApplyClose} disabled={submitting}>
-              Cancel
-            </Button>
-            <Button variant="contained" onClick={handleApplySubmit} disabled={submitting}>
-              {submitting ? 'Submitting...' : 'Submit'}
-            </Button>
-          </Stack>
-        </Box>
-      </Modal>
+      {/* Dialog Popup */}
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+        {/* <DialogTitle>{dialogSuccess ? 'Success' : 'Error'}</DialogTitle> */}
+        <DialogContent>
+          <Typography>{dialogMessage}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)} autoFocus>
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

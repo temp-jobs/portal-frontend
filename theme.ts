@@ -21,7 +21,7 @@ let theme = createTheme({
     },
     text: {
       primary: '#212121',
-      secondary: grey[700],
+      secondary: grey[400],
     },
     divider: grey[300],
   },

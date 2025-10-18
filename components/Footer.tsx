@@ -9,7 +9,7 @@ export default function Footer() {
       component="footer"
       sx={{
         bgcolor: 'background.paper',
-        color: 'text.secondary',
+        color: 'text.primary',
         borderTop: '1px solid',
         borderColor: 'divider',
         mt: 8,
@@ -21,7 +21,7 @@ export default function Footer() {
         {/* Top Grid Links */}
         <Grid container spacing={4} justifyContent="space-between">
           {/* Company */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{ xs: 12, md: 3, sm: 3 }}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Company
             </Typography>
@@ -39,7 +39,7 @@ export default function Footer() {
           </Grid>
 
           {/* Resources */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{ xs: 12, md: 3, sm: 3 }}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Resources
             </Typography>
@@ -57,7 +57,7 @@ export default function Footer() {
           </Grid>
 
           {/* Legal */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{ xs: 12, md: 3, sm: 3 }}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Legal
             </Typography>
@@ -75,7 +75,7 @@ export default function Footer() {
           </Grid>
 
           {/* Socials */}
-          <Grid size={{xs: 12, md: 6, sm: 3}}>
+          <Grid size={{ xs: 12, md: 3, sm: 3 }}>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
               Follow Us
             </Typography>
@@ -103,7 +103,7 @@ export default function Footer() {
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           spacing={2}
         >
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.primary">
             © {new Date().getFullYear()} Part Time Match. All rights reserved.
           </Typography>
 

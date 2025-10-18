@@ -1,61 +1,148 @@
 'use client';
 
 import React from 'react';
-import { Box, Avatar, Typography, Button } from '@mui/material';
-import BusinessIcon from '@mui/icons-material/Business';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import {
+  Box,
+  Avatar,
+  Typography,
+  Button,
+  Divider,
+  Stack,
+} from '@mui/material';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
+import ChatIcon from '@mui/icons-material/Chat';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import InsightsIcon from '@mui/icons-material/Insights';
+import SearchIcon from '@mui/icons-material/Search';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import PersonIcon from '@mui/icons-material/Person';
 
 export default function Sidebar() {
   const { user } = useAuthContext();
   const router = useRouter();
 
-  if (!user) return null; // ✅ Prevents hydration mismatch if user is undefined on first render
+  if (!user) return null;
+
+  const isEmployer = user.role === 'employer';
+  const isJobseeker = user.role === 'jobseeker';
 
   return (
-    <Box>
-      {/* User Info Section */}
-      <Box display="flex" alignItems="center" mb={3}>
-        <Avatar sx={{ bgcolor: 'primary.main', mr: 1 }}>
-          {user.companyName?.[0] ?? user.name?.[0] ?? 'C'}
-        </Avatar>
-        <Box>
-          <Typography variant="subtitle1" fontWeight={700}>
-            {user.companyName || user.name}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {user.role
-              ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
-              : ''}
-          </Typography>
-        </Box>
-      </Box>
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      textAlign="center"
+      height="100%"
+      justifyContent="flex-start"
+      sx={{ py: 3 }}
+    >
+      {/* Profile */}
+      <Avatar
+        sx={{
+          width: 64,
+          height: 64,
+          bgcolor: 'primary.main',
+          mb: 1.5,
+          fontSize: 28,
+        }}
+      >
+        {user?.name?.charAt(0).toUpperCase()}
+      </Avatar>
 
-      {/* Navigation Buttons */}
-      <Box display="flex" flexDirection="column" gap={1}>
-        {user.role === 'employer' && (
+      <Typography variant="subtitle1" fontWeight={600}>
+        {user.name}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" mb={2}>
+        {isEmployer ? 'Employer' : 'Job Seeker'}
+      </Typography>
+
+      <Divider sx={{ width: '100%', mb: 2 }} />
+
+      {/* Dynamic navigation */}
+      <Stack spacing={1} width="100%">
+        {isEmployer && (
           <>
             <Button
-              onClick={() => router.push('/post-job')}
-              variant="text"
-              startIcon={<AddCircleOutlineIcon />}
-              sx={{ justifyContent: 'flex-start' }}
-            >
-              Post a Job
-            </Button>
-
-            <Button
-              onClick={() => router.push('/my-jobs')}
-              variant="text"
-              startIcon={<BusinessIcon />}
-              sx={{ justifyContent: 'flex-start' }}
+              startIcon={<WorkOutlineIcon />}
+              onClick={() => router.push('/em/jobs')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
             >
               My Jobs
             </Button>
+            <Button
+              startIcon={<AssignmentIndIcon />}
+              onClick={() => router.push('/em/applicants')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Applicants
+            </Button>
+            <Button
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={() => router.push('/em/post')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Post a Job
+            </Button>
+            <Button
+              startIcon={<ChatIcon />}
+              onClick={() => router.push('/messages')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Messages
+            </Button>
+            <Button
+              startIcon={<InsightsIcon />}
+              onClick={() => router.push('/em/analytics')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Analytics
+            </Button>
           </>
         )}
-      </Box>
+
+        {isJobseeker && (
+          <>
+            <Button
+              startIcon={<SearchIcon />}
+              onClick={() => router.push('jsk/jobs')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Browse Jobs
+            </Button>
+            <Button
+              startIcon={<FavoriteIcon />}
+              onClick={() => router.push('jsk/saved-jobs')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Saved Jobs
+            </Button>
+            <Button
+              startIcon={<AssignmentIndIcon />}
+              onClick={() => router.push('jsk/applications')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              My Applications
+            </Button>
+            <Button
+              startIcon={<ChatIcon />}
+              onClick={() => router.push('/messages')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Messages
+            </Button>
+            <Button
+              startIcon={<PersonIcon />}
+              onClick={() => router.push('jsk/profile')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Profile
+            </Button>
+          </>
+        )}
+      </Stack>
     </Box>
   );
 }

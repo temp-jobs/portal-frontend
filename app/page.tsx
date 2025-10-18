@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Button,
@@ -24,6 +24,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import JobCard from '../components/JobCard'; // assuming JobCard exists
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const categories = [
   { title: 'Web Development', icon: <WorkOutlineIcon /> },
@@ -64,6 +65,7 @@ const featuredJobs = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { token, user } = useAuthContext();
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,6 +73,16 @@ export default function HomePage() {
     const query = formData.get('searchQuery')?.toString().trim();
     if (query) router.push(`/jobs?search=${encodeURIComponent(query)}`);
   };
+
+  useEffect(() => {
+    if (user || token) {
+      if (user?.role === 'jobseeker') {
+        router.push('jsk/dashboard');
+      } else {
+        router.push('em/dashboard')
+      }
+    }
+  });
 
   return (
     <Box sx={{ bgcolor: 'background.default' }}>

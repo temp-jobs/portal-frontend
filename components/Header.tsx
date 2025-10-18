@@ -86,8 +86,10 @@ export default function Header() {
               variant="h6"
               component="button"
               onClick={() => {
-                if (isJobseeker || isEmployer) {
-                  navigateWithLoader('/dashboard')
+                if (isJobseeker) {
+                  navigateWithLoader('jsk/dashboard')
+                } else if (isEmployer) {
+                  navigateWithLoader('em/dashboard')
                 } else {
                   navigateWithLoader('/')
                 }
@@ -114,7 +116,11 @@ export default function Header() {
 
                       <>
                         <Button
-                          onClick={() => navigateWithLoader('/dashboard')}
+                          onClick={() => {
+                            user?.role === 'jobseeker' ?
+                              navigateWithLoader('jsk/dashboard')
+                              : navigateWithLoader('em/dashboard')
+                          }}
                           sx={{
                             fontWeight: 600,
                             color: 'text.primary',
@@ -139,7 +145,7 @@ export default function Header() {
                         Find Jobs
                       </Button>
                       <Button
-                        onClick={() => navigateWithLoader('/profile/jobseeker')}
+                        onClick={() => navigateWithLoader('jsk/profile')}
                         sx={{
                           fontWeight: 600,
                           color: 'text.primary',
@@ -154,7 +160,7 @@ export default function Header() {
                   {isEmployer && user?.profileCompleted && (
                     <>
                       <Button
-                        onClick={() => navigateWithLoader('/post-job')}
+                        onClick={() => navigateWithLoader('em/post')}
                         sx={{
                           fontWeight: 600,
                           color: 'text.primary',
@@ -164,7 +170,7 @@ export default function Header() {
                         Post Job
                       </Button>
                       <Button
-                        onClick={() => navigateWithLoader('/profile/employer')}
+                        onClick={() => navigateWithLoader('em/profile')}
                         sx={{
                           fontWeight: 600,
                           color: 'text.primary',
@@ -263,17 +269,17 @@ export default function Header() {
                         <MenuItem key="jobs" onClick={() => navigateWithLoader('/jobs')}>
                           Find Jobs
                         </MenuItem>,
-                        <MenuItem key="profile-jobseeker" onClick={() => navigateWithLoader('/profile/jobseeker')}>
+                        <MenuItem key="profile-jobseeker" onClick={() => navigateWithLoader('jsk/profile')}>
                           Profile
                         </MenuItem>,
                       ]
                       : []),
                     ...(isEmployer
                       ? [
-                        <MenuItem key="post" onClick={() => navigateWithLoader('/post-job')}>
+                        <MenuItem key="post" onClick={() => navigateWithLoader('em/post')}>
                           Post Job
                         </MenuItem>,
-                        <MenuItem key="profile-employer" onClick={() => navigateWithLoader('/profile/employer')}>
+                        <MenuItem key="profile-employer" onClick={() => navigateWithLoader('em/profile')}>
                           Profile
                         </MenuItem>,
                       ]
