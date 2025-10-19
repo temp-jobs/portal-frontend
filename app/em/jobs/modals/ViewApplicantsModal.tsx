@@ -16,6 +16,7 @@ import {
 import axios from 'axios';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { Job } from '@/types/job';
 
 interface Experience {
   company: string;
@@ -50,10 +51,7 @@ interface Application {
   status: 'pending' | 'accepted' | 'rejected' | 'shortlisted';
 }
 
-interface Job {
-  _id: string;
-  title: string;
-}
+
 
 interface Props {
   job: Job | null;

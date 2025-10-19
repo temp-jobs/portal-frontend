@@ -1,26 +1,21 @@
 'use client';
 
 import React from 'react';
-import { Grid, Box } from '@mui/material';
+import { Grid, Box, useTheme } from '@mui/material';
 import Sidebar from './Sidebar';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
+
   return (
-    <Grid
-      container
-      sx={{
-        minHeight: '100vh',
-        bgcolor: '#f9fafb',
-        overflow: 'hidden',
-      }}
-    >
+    <Grid container sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
       {/* Sidebar */}
       <Grid
         size={{ xs: 12, sm: 4, md: 2 }}
         sx={{
           borderRight: '1px solid',
-          borderColor: 'divider',
-          bgcolor: '#ffffff',
+          borderColor: theme.palette.divider,
+          bgcolor: theme.palette.mode === 'light' ? theme.palette.background.paper : '#1A1A1A',
           px: 2,
           py: 3,
           display: 'flex',
@@ -28,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           position: { md: 'sticky' },
           top: 0,
           height: { md: '100vh', xs: 'auto' },
+          transition: 'background 0.3s ease',
         }}
       >
         <Sidebar />
@@ -38,10 +34,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         size={{ xs: 12, sm: 8, md: 10 }}
         sx={{
           p: { xs: 2, md: 4 },
-          height: '100vh',
-          overflowY: 'auto',
+          flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
+          overflowY: 'auto',
         }}
       >
         <Box flexGrow={1}>{children}</Box>

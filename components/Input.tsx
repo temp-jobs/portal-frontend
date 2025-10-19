@@ -6,6 +6,7 @@ import {
   TextFieldProps,
   InputAdornment,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 
@@ -27,6 +28,7 @@ const Input: React.FC<InputProps> = ({
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === 'password';
+  const theme = useTheme();
 
   return (
     <TextField
@@ -54,25 +56,24 @@ const Input: React.FC<InputProps> = ({
                 </IconButton>
               </InputAdornment>
             ) : (
-              endIcon && (
-                <InputAdornment position="end">{endIcon}</InputAdornment>
+                endIcon && <InputAdornment position="end">{endIcon}</InputAdornment>
               )
-            )}
+            }
           </>
         ),
         sx: {
-          backgroundColor: 'background.paper',
+          backgroundColor: theme.palette.background.paper,
           borderRadius: 2,
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'grey.300',
+            borderColor: theme.palette.grey[300],
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'primary.main',
+            borderColor: theme.palette.primary.main,
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderWidth: 2,
-            borderColor: 'primary.main',
-            boxShadow: (theme) => `0 0 0 3px ${theme.palette.primary.light}33`,
+            borderColor: theme.palette.primary.main,
+            boxShadow: `0 0 0 3px ${theme.palette.primary.light}33`,
           },
         },
       }}

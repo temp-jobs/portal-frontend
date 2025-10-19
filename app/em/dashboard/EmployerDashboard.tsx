@@ -5,43 +5,40 @@ import {
   Grid,
   Box,
   Typography,
-  Avatar,
-  Button,
-  Divider,
   Paper,
   Card,
   CardContent,
   CardActions,
   Chip,
+  Button,
   CircularProgress,
 } from '@mui/material';
-import WorkOutlineIcon from '@mui/icons-material/WorkOutline';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
-import ChatIcon from '@mui/icons-material/Chat';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import InsightsIcon from '@mui/icons-material/Insights';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import axios from 'axios';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
-
-interface Job {
-  _id: string;
-  title: string;
-  description: string;
-  location: string;
-  totalApplications?: number;
-  status?: 'open' | 'closed';
-}
+import EditJobModal from '../jobs/modals/EditJobModal';
+import ViewApplicantsModal from '../jobs/modals/ViewApplicantsModal';
+import { Job } from '@/types/job';
 
 interface Applicant {
   _id: string;
   name: string;
-  email?: string;
   skills: string[];
   status: 'pending' | 'shortlisted' | 'rejected';
   job: string;
+}
+
+interface ChatPreview {
+  _id: string;
+  chatId: string;
+  partnerId: string;
+  partnerName: string;
+  jobTitle: string;
+  lastMessage: string;
+  timestamp: string;
+  unreadCount: number;
 }
 
 export default function EmployerDashboard() {
@@ -51,33 +48,38 @@ export default function EmployerDashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewApplicantsJob, setViewApplicantsJob] = useState<Job | null>(null);
+  const [editJob, setEditJob] = useState<Job | null>(null);
+  const [chats, setChats] = useState<ChatPreview[]>([]);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL; // already includes /api/v1
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const headers = { Authorization: `Bearer ${token}` };
 
-  // 🧠 Fetch Jobs + Applicants
+  // Fetch Jobs, Applicants, and Chats
   useEffect(() => {
     if (!user || !token) return;
 
     const fetchData = async () => {
       try {
         setLoading(true);
-        const headers = { Authorization: `Bearer ${token}` };
+        const [jobsRes, chatsRes] = await Promise.all([
+          axios.get(`${API_URL}/employer/dashboard`, { headers }),
+          axios.get(`${API_URL}/chats/user`, { headers }),
+        ]);
 
-        // 1️⃣ Fetch all jobs
-        const jobsRes = await axios.get(`${API_URL}/employer/dashboard`, { headers });
-        const jobList = jobsRes.data;
+        const jobList: Job[] = jobsRes.data;
         setJobs(jobList);
 
-        // 2️⃣ Fetch applicants for all jobs
-        const jobIds = jobList.map((j: any) => j._id);
-        const applicantReqs = jobIds.map((id: string) =>
-          axios.get(`${API_URL}/employer/dashboard/${id}/applicants`, { headers })
+        const applicantReqs = jobList.map((j) =>
+          axios.get(`${API_URL}/employer/dashboard/${j._id}/applicants`, { headers })
         );
         const applicantRes = await Promise.all(applicantReqs);
         const applicantsData = applicantRes.flatMap((r) => r.data);
         setApplicants(applicantsData);
+
+        setChats(chatsRes.data || []);
       } catch (err) {
-        console.error('Employer dashboard fetch error:', err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -86,40 +88,24 @@ export default function EmployerDashboard() {
     fetchData();
   }, [user, token]);
 
-  // ✳️ Shortlist candidate
   const handleShortlist = async (applicationId: string) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.put(
-        `${API_URL}/employer/dashboard/shortlist/${applicationId}`,
-        {},
-        { headers }
-      );
-      // Update state instantly
+      await axios.put(`${API_URL}/employer/dashboard/shortlist/${applicationId}`, {}, { headers });
       setApplicants((prev) =>
-        prev.map((a) =>
-          a._id === applicationId ? { ...a, status: 'shortlisted' } : a
-        )
+        prev.map((a) => (a._id === applicationId ? { ...a, status: 'shortlisted' } : a))
       );
-      console.log(res.data.message);
     } catch (err) {
-      console.error('Shortlist error:', err);
+      console.error(err);
       alert('Failed to shortlist candidate');
     }
   };
 
-  // 💬 Initiate chat
   const handleChat = async (applicantId: string) => {
     try {
-      const headers = { Authorization: `Bearer ${token}` };
-      const res = await axios.post(
-        `${API_URL}/employer/dashboard/initiate-chat/${applicantId}`,
-        {},
-        { headers }
-      );
+      const res = await axios.post(`${API_URL}/employer/dashboard/initiate-chat/${applicantId}`, {}, { headers });
       router.push(`/chat/${res.data.roomId}`);
     } catch (err: any) {
-      console.error('Chat initiation error:', err);
+      console.error(err);
       alert(err.response?.data?.message || 'Unable to start chat');
     }
   };
@@ -140,143 +126,111 @@ export default function EmployerDashboard() {
     );
   }
 
+  // Stats
   const totalJobs = jobs.length;
   const totalApplicants = applicants.length;
   const shortlisted = applicants.filter((a) => a.status === 'shortlisted').length;
-  const openJobs = jobs.filter((j) => j.status !== 'closed').length;
+  const openJobs = jobs.filter((j) => j.status === 'Active').length;
 
   return (
-    // <Grid container sx={{ height: '100vh' }}>
     <DashboardLayout>
+      <Grid container spacing={2}>
+        {/* Main Section */}
+        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column', gap: 3, p: 3, overflowY: 'auto' }}>
+          {/* Welcome & Stats */}
+          <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'primary.light' }}>
+            <Typography variant="h5" fontWeight={600} color="text.primary">Welcome, {user.name}</Typography>
+            <Typography variant="body1" color="text.primary">Manage your job postings, track applicants, and connect with candidates.</Typography>
+          </Paper>
 
-      {/* Main Content */}
-      <Grid size={{ xs: 12, md: 10 }} sx={{ overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'primary.light' }}>
-          <Typography variant="h5" fontWeight={600} color="text.primary">
-            Welcome, {user.name}
-          </Typography>
-          <Typography variant="body1" color="text.primary">
-            Manage your job postings, track applicants, and connect with candidates.
-          </Typography>
-        </Paper>
-
-        {/* Dashboard Overview */}
-        <Grid container spacing={2}>
-          {[
-            { label: 'Total Jobs', value: totalJobs },
-            { label: 'Open Jobs', value: openJobs },
-            { label: 'Applicants', value: totalApplicants },
-            { label: 'Shortlisted', value: shortlisted },
-          ].map((stat, i) => (
-            <Grid size={{ xs: 6, sm: 3 }} key={i}>
-              <Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2, boxShadow: 2 }}>
-                <Typography variant="h6" fontWeight={600}>
-                  {stat.value}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {stat.label}
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Job Cards */}
-        <Typography variant="h6" fontWeight={600}>
-          My Job Postings
-        </Typography>
-        <Grid container spacing={2}>
-          {jobs.map((job) => (
-            <Grid size={{ xs: 12, sm: 6 }} key={job._id}>
-              <Card
-                sx={{
-                  borderRadius: 2,
-                  boxShadow: 3,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  height: '100%',
-                  '&:hover': { boxShadow: 6, transform: 'scale(1.01)', transition: '0.3s' },
-                }}
-              >
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h6" fontWeight={600}>
-                      {job.title}
-                    </Typography>
-                    <Chip
-                      label={job.status === 'closed' ? 'Closed' : 'Open'}
-                      color={job.status === 'closed' ? 'default' : 'success'}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="text.primary" mb={1} display="flex" alignItems="center">
-                    <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> {job.location}
-                  </Typography>
-                  <Typography variant="body2" noWrap>
-                    {job.description}
-                  </Typography>
-                </CardContent>
-                <CardActions sx={{ justifyContent: 'space-between' }}>
-                  <Button size="small" variant="contained" onClick={() => router.push(`/employer/jobs/${job._id}`)}>
-                    View Applicants
-                  </Button>
-                  <Button size="small" variant="outlined" onClick={() => router.push(`/employer/jobs/edit/${job._id}`)}>
-                    Edit
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Applicants Section */}
-        <Typography variant="h6" fontWeight={600} mt={3}>
-          Recent Applicants
-        </Typography>
-        {applicants.length === 0 ? (
-          <Typography color="text.primary">No applications yet.</Typography>
-        ) : (
           <Grid container spacing={2}>
-            {applicants.slice(0, 4).map((app) => (
-              <Grid size={{ xs: 12, sm: 6 }} key={app._id}>
-                <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
+            {[{ label: 'Total Jobs', value: totalJobs }, { label: 'Open Jobs', value: openJobs }, { label: 'Applicants', value: totalApplicants }, { label: 'Shortlisted', value: shortlisted }].map((stat, i) => (
+              <Grid size={{ xs: 6, sm: 3 }} key={i}>
+                <Paper sx={{ p: 2, textAlign: 'center', borderRadius: 2, boxShadow: 2 }}>
+                  <Typography variant="h6" fontWeight={600}>{stat.value}</Typography>
+                  <Typography variant="body2" color="text.secondary">{stat.label}</Typography>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Job Listings */}
+          <Typography variant="h6" fontWeight={600} mt={2}>My Job Postings</Typography>
+          <Grid container spacing={2}>
+            {jobs.map((job) => (
+              <Grid size={{ xs: 12, sm: 6 }} key={job._id}>
+                <Card sx={{ borderRadius: 2, boxShadow: 3, display: 'flex', flexDirection: 'column', height: '100%', '&:hover': { boxShadow: 6, transform: 'scale(1.01)', transition: '0.3s' } }}>
                   <CardContent>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {app.name}
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography variant="h6" fontWeight={600}>{job.title}</Typography>
+                      <Chip
+                        label={job.status}
+                        color={job.status === 'Closed' ? 'default' : 'success'}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.primary" mb={1} display="flex" alignItems="center">
+                      <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> {job.location}
                     </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      {app.skills.join(', ')}
-                    </Typography>
-                    <Chip
-                      label={app.status}
-                      color={
-                        app.status === 'shortlisted'
-                          ? 'success'
-                          : app.status === 'rejected'
-                          ? 'error'
-                          : 'warning'
-                      }
-                      size="small"
-                      sx={{ mt: 1 }}
-                    />
+                    <Typography variant="body2" noWrap>{job.description}</Typography>
                   </CardContent>
-                  <CardActions>
-                    {app.status !== 'shortlisted' ? (
-                      <Button size="small" variant="outlined" onClick={() => handleShortlist(app._id)}>
-                        Shortlist
-                      </Button>
-                    ) : (
-                      <Button size="small" variant="contained" onClick={() => handleChat(app._id)}>
-                        Chat
-                      </Button>
-                    )}
+                  <CardActions sx={{ justifyContent: 'space-between' }}>
+                    <Button size="small" variant="contained" onClick={() => setViewApplicantsJob(job)}>View Applicants</Button>
+                    <Button size="small" variant="outlined" onClick={() => setEditJob(job)}>Edit</Button>
                   </CardActions>
                 </Card>
               </Grid>
             ))}
           </Grid>
-        )}
+        </Grid>
+
+        {/* Messages Sidebar */}
+        <Grid
+          size={{ xs: 12, md: 4 }}
+          sx={{
+            bgcolor: 'primary.light',
+            borderRadius: 2,
+            borderLeft: '1px solid primary.light',
+            p: 2,
+            height: '80vh',
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
+            gap: 2,
+            overflowY: 'auto',
+          }}
+        >
+          <Typography variant="h6" fontWeight={600}>Messages</Typography>
+          {chats.length === 0 ? (
+            <Typography color="text.primary">No messages yet.</Typography>
+          ) : (
+            chats.map((chat) => (
+              <Card
+                key={chat._id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: 1.5,
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  boxShadow: 2,
+                  '&:hover': { boxShadow: 4, bgcolor: 'grey.50', color: 'black' },
+                }}
+                onClick={() => router.push(`/chat?chatId=${chat.chatId}&userId=${chat.partnerId}&userName=${encodeURIComponent(chat.partnerName)}`)}
+              >
+                <Chip label={chat.unreadCount > 0 ? `${chat.unreadCount} new` : ''} color="primary" size="small" sx={{ mr: 1 }} />
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={600}>{chat.partnerName} ({chat.jobTitle})</Typography>
+                  <Typography variant="body2" noWrap>{chat.lastMessage}</Typography>
+                  <Typography variant="caption">{chat.timestamp}</Typography>
+                </Box>
+              </Card>
+            ))
+          )}
+        </Grid>
+
+        {/* Modals */}
+        <ViewApplicantsModal job={viewApplicantsJob} onClose={() => setViewApplicantsJob(null)} />
+        <EditJobModal job={editJob} onClose={() => setEditJob(null)} onUpdated={() => { }} />
       </Grid>
     </DashboardLayout>
   );

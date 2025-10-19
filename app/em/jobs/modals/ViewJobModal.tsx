@@ -2,27 +2,9 @@
 
 import React from 'react';
 import { Modal, Box, Typography, Chip, Divider } from '@mui/material';
+import { Job } from '@/types/job';
 
-interface Job {
-  _id: string;
-  title: string;
-  location: string;
-  status: string;
-  description: string;
-  type: string;
-  experienceLevel: string;
-  salaryType: string;
-  minSalary?: number;
-  maxSalary?: number;
-  currency?: string;
-  benefits?: string[];
-  skillsRequired?: string[];
-  education?: string;
-  openings?: number;
-  deadline?: string;
-  jobDuration?: string;
-  createdAt: string;
-}
+
 
 interface Props {
   job: Job | null;

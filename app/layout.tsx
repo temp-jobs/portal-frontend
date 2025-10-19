@@ -2,42 +2,34 @@
 
 import './globals.css';
 import { ReactNode } from 'react';
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import theme from '../theme';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { AuthProvider } from '../contexts/AuthContext';
 import { SocketProvider } from '../contexts/SocketContext';
 import NavigationEvents from '../components/NavigationEvents';
 import { NavigationProvider } from '../contexts/NavigationContext';
+import { ColorModeProvider } from '../contexts/ColorModeContext';
 import '@fontsource/montserrat/400.css';
 import '@fontsource/montserrat/500.css';
 import '@fontsource/montserrat/600.css';
 import '@fontsource/montserrat/700.css';
 
-
-// export const metadata = {
-//   title: 'Job Portal',
-//   description: 'Part-time job platform',
-// };
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
+        <ColorModeProvider>
           <AuthProvider>
             <SocketProvider>
               <NavigationProvider>
                 <Header />
-                <NavigationEvents /> {/* Universal full-page loader */}
+                <NavigationEvents />
                 <main style={{ minHeight: '80vh' }}>{children}</main>
                 <Footer />
               </NavigationProvider>
             </SocketProvider>
           </AuthProvider>
-        </ThemeProvider>
+        </ColorModeProvider>
       </body>
     </html>
   );

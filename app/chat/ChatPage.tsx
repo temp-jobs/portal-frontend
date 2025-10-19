@@ -35,7 +35,7 @@ interface ChatPageProps {
   chatPartnerId: string;
   chatPartnerName: string;
   chatPartnerAvatar?: string;
-  chatId?: string; // optional roomId
+  chatId?: string;
 }
 
 const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, chatPartnerAvatar, chatId }) => {
@@ -59,8 +59,8 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
       setLoading(true);
       try {
         const url = chatId
-          ? `${process.env.NEXT_PUBLIC_API}/messages?roomId=${chatId}&limit=50`
-          : `${process.env.NEXT_PUBLIC_API}/messages?userA=${user.id}&userB=${chatPartnerId}&limit=50`;
+          ? `${process.env.NEXT_PUBLIC_API_URL}/messages?roomId=${chatId}&limit=50`
+          : `${process.env.NEXT_PUBLIC_API_URL}/messages?userA=${user.id}&userB=${chatPartnerId}&limit=50`;
 
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error('Failed to fetch messages');
@@ -194,7 +194,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
                     <Box sx={{ position: 'relative', maxWidth: '70%' }}>
                       <Box
                         sx={{
-                          bgcolor: isSelf ? '#0B74E6' : '#e5e5ea',
+                          bgcolor: isSelf ? '#1A3450FF' : '#AFAFCAFF',
                           color: isSelf ? 'white' : 'black',
                           borderRadius: 2,
                           borderTopLeftRadius: isSelf ? 12 : 0,
@@ -257,7 +257,18 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
             value={newMessage}
             onChange={e => setNewMessage(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            sx={{ bgcolor: '#f0f2f5', borderRadius: 2 }}
+            variant="outlined"
+            size="small"
+            sx={{
+              bgcolor: theme.palette.mode === 'light' ? 'background.paper' : 'background.default',
+              '& .MuiInputBase-input': {
+                color: theme.palette.text.primary, // ensures text uses theme color
+              },
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: theme.palette.divider, // consistent border color
+              },
+              borderRadius: 2,
+            }}
           />
           <Button variant="contained" onClick={handleSend}>Send</Button>
         </Stack>

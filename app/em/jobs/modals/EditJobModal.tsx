@@ -4,25 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Box, Typography, TextField, MenuItem, Button, CircularProgress, Chip } from '@mui/material';
 import axios from 'axios';
 import { useAuthContext } from '@/contexts/AuthContext';
-
-interface Job {
-  _id: string;
-  title: string;
-  location: string;
-  status: 'Draft' | 'Active' | 'Closed';
-  type: string;
-  experienceLevel: string;
-  skillsRequired?: string[];
-  salaryType: string;
-  minSalary?: number;
-  maxSalary?: number;
-  currency?: string;
-  benefits?: string[];
-  description: string;
-  openings?: number;
-  deadline?: string;
-  jobDuration?: string;
-}
+import { Job } from '@/types/job';
 
 interface Props {
   job: Job | null;
