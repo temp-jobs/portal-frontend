@@ -51,12 +51,8 @@ export default function LoginPage() {
       <Grid
         size={{ xs: 12, md: 6 }}
         sx={{
-          background: theme.palette.mode === 'light'
-            ? 'linear-gradient(135deg, #00A884 0%, #4DD4B0 100%)'
-            : 'linear-gradient(135deg, #004d40 0%, #00796b 100%)',
-          color: theme.palette.getContrastText(
-            theme.palette.mode === 'light' ? '#00A884' : '#004d40'
-          ),
+          background: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.primary.main} 100%)`,
+          color: theme.palette.common.white,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
