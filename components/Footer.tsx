@@ -1,32 +1,40 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Grid, Typography, Link, Stack, IconButton, TextField, Button } from '@mui/material';
+import { Box, Container, Grid, Typography, Link, Stack, IconButton, TextField, Button, useTheme } from '@mui/material';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
 
 export default function Footer() {
+  const theme = useTheme();
+
+  const socialColors = {
+    linkedin: { main: '#0A66C2', hover: '#004182' },
+    twitter: { main: '#1DA1F2', hover: '#0d95e8' },
+    facebook: { main: '#1877F2', hover: '#0d47a1' },
+    instagram: { main: '#E1306C', hover: '#b12b5b' },
+  };
+
   return (
     <Box
       component="footer"
       sx={{
-        bgcolor: '#f7f9fa',
-        color: 'text.secondary',
+        bgcolor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         borderTop: '1px solid',
-        borderColor: 'divider',
+        borderColor: theme.palette.divider,
         mt: 12,
         pt: 10,
         pb: 6,
       }}
     >
       <Container maxWidth="lg">
-        {/* Top Grid Links + Newsletter */}
         <Grid container spacing={6}>
           {/* Company */}
-          <Grid size={{xs:12,sm:6 ,md:3}}>
-            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
               Company
             </Typography>
             <Stack spacing={1}>
@@ -46,8 +54,8 @@ export default function Footer() {
           </Grid>
 
           {/* Resources */}
-          <Grid size={{xs:12,sm:6 ,md:3}}>
-            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
               Resources
             </Typography>
             <Stack spacing={1}>
@@ -67,8 +75,8 @@ export default function Footer() {
           </Grid>
 
           {/* Legal */}
-          <Grid size={{xs:12,sm:6 ,md:3}}>
-            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
               Legal
             </Typography>
             <Stack spacing={1}>
@@ -88,8 +96,8 @@ export default function Footer() {
           </Grid>
 
           {/* Newsletter + Socials */}
-          <Grid size={{xs:12,sm:6 ,md:3}}>
-            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>
               Stay Updated
             </Typography>
 
@@ -99,7 +107,12 @@ export default function Footer() {
                 placeholder="Your email"
                 size="small"
                 variant="outlined"
-                sx={{ flex: 1, bgcolor: '#fff', borderRadius: 1 }}
+                sx={{
+                  flex: 1,
+                  bgcolor: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.background.default,
+                  borderRadius: 1,
+                  input: { color: theme.palette.text.primary },
+                }}
               />
               <Button variant="contained" color="primary" sx={{ px: 3 }}>
                 Subscribe
@@ -111,28 +124,40 @@ export default function Footer() {
               <IconButton
                 href="https://linkedin.com"
                 target="_blank"
-                sx={{ color: '#0A66C2', '&:hover': { bgcolor: 'transparent', color: '#004182' } }}
+                sx={{
+                  color: socialColors.linkedin.main,
+                  '&:hover': { bgcolor: 'transparent', color: socialColors.linkedin.hover },
+                }}
               >
                 <LinkedInIcon />
               </IconButton>
               <IconButton
                 href="https://twitter.com"
                 target="_blank"
-                sx={{ color: '#1DA1F2', '&:hover': { bgcolor: 'transparent', color: '#0d95e8' } }}
+                sx={{
+                  color: socialColors.twitter.main,
+                  '&:hover': { bgcolor: 'transparent', color: socialColors.twitter.hover },
+                }}
               >
                 <TwitterIcon />
               </IconButton>
               <IconButton
                 href="https://facebook.com"
                 target="_blank"
-                sx={{ color: '#1877F2', '&:hover': { bgcolor: 'transparent', color: '#0d47a1' } }}
+                sx={{
+                  color: socialColors.facebook.main,
+                  '&:hover': { bgcolor: 'transparent', color: socialColors.facebook.hover },
+                }}
               >
                 <FacebookIcon />
               </IconButton>
               <IconButton
                 href="https://instagram.com"
                 target="_blank"
-                sx={{ color: '#E1306C', '&:hover': { bgcolor: 'transparent', color: '#b12b5b' } }}
+                sx={{
+                  color: socialColors.instagram.main,
+                  '&:hover': { bgcolor: 'transparent', color: socialColors.instagram.hover },
+                }}
               >
                 <InstagramIcon />
               </IconButton>
@@ -145,7 +170,7 @@ export default function Footer() {
         </Grid>
 
         {/* Divider */}
-        <Box sx={{ borderTop: '1px solid #ddd', my: 6 }} />
+        <Box sx={{ borderTop: '1px solid', borderColor: theme.palette.divider, my: 6 }} />
 
         {/* Bottom Bar */}
         <Stack
@@ -154,7 +179,7 @@ export default function Footer() {
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           spacing={2}
         >
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2">
             © {new Date().getFullYear()} Part Time Match. All rights reserved.
           </Typography>
 

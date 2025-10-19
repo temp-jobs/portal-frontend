@@ -24,14 +24,16 @@ import BuildIcon from '@mui/icons-material/Build';
 import DesignServicesIcon from '@mui/icons-material/DesignServices';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import EventIcon from '@mui/icons-material/Event';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const router = useRouter();
+  const { token, user } = useAuthContext();
   const theme = useTheme();
- const [heroIcons, setHeroIcons] = useState<React.ReactElement[]>([]);
-
+  const [heroIcons, setHeroIcons] = useState<React.ReactElement[]>([]);
 
   // Generate hero icons positions safely on client
+  // inside HomePage component
   useEffect(() => {
     const icons = [
       <WorkIcon key="work" />,
@@ -41,37 +43,45 @@ export default function HomePage() {
       <AccountCircleIcon key="user" />,
     ];
 
-    const positionedIcons = icons.map((Icon, i) => {
-      const top = Math.random() * 80 + 10;
-      const left = Math.random() * 80 + 10;
-      return (
-        <Box
-          key={i}
-          sx={{
-            position: 'absolute',
-            top: `${top}%`,
-            left: `${left}%`,
-            color: 'rgba(255,255,255,0.2)',
-            fontSize: { xs: 40, sm: 60 },
-            animation: `float${i} 12s ease-in-out infinite`,
-          }}
-        >
-          {Icon}
-        </Box>
-      );
-    });
+  const mode = theme.palette.mode; // stable value for theme mode
 
-    setHeroIcons(positionedIcons);
-  }, []);
+  const positionedIcons = icons.map((Icon, i) => {
+    const top = Math.random() * 80 + 10;
+    const left = Math.random() * 80 + 10;
+    return (
+      <Box
+        key={i}
+        sx={{
+          position: 'absolute',
+          top: `${top}%`,
+          left: `${left}%`,
+          color:
+            mode === 'light'
+              ? 'rgba(0,0,0,0.05)'
+              : 'rgba(255,255,255,0.1)',
+          fontSize: { xs: 40, sm: 60 },
+          animation: `float${i} 12s ease-in-out infinite`,
+        }}
+      >
+        {Icon}
+      </Box>
+    );
+  });
 
-  const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const query = formData.get('searchQuery')?.toString().trim();
-    if (query) router.push(`/jobs?search=${encodeURIComponent(query)}`);
-  };
+  setHeroIcons(positionedIcons);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // <- empty dependency array keeps size constant
 
-  // Categories (exact same UI you gave)
+
+  // Redirect logged-in users
+  useEffect(() => {
+    if (user || token) {
+      if (user?.role === 'jobseeker') router.push('jsk/dashboard');
+      else router.push('em/dashboard');
+    }
+  }, [user, token]);
+
+  // Categories
   const categories = [
     { name: 'Retail & Sales', icon: <LocalMallIcon /> },
     { name: 'IT & Software', icon: <ComputerIcon /> },
@@ -83,6 +93,13 @@ export default function HomePage() {
     { name: 'Social Work', icon: <VolunteerActivismIcon /> },
     { name: 'Events & Management', icon: <EventIcon /> },
   ];
+
+  const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const query = formData.get('searchQuery')?.toString().trim();
+    if (query) router.push(`/jobs?search=${encodeURIComponent(query)}`);
+  };
 
   return (
     <>
@@ -96,7 +113,9 @@ export default function HomePage() {
           alignItems: 'center',
           justifyContent: 'center',
           textAlign: 'center',
-          background: 'linear-gradient(135deg, #f0fdf4,rgb(30, 134, 113))',
+          background: theme.palette.mode === 'light'
+            ? `linear-gradient(135deg, ${theme.palette.background.default}, ${theme.palette.primary.light})`
+            : `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.primary.dark})`,
         }}
       >
         {/* Floating Icons Layer */}
@@ -116,13 +135,13 @@ export default function HomePage() {
         <Container sx={{ position: 'relative', zIndex: 2 }}>
           <Typography
             variant="h2"
-            sx={{ fontWeight: 700, color: '#fff', mb: 2, fontSize: { xs: '2rem', md: '3.5rem' } }}
+            sx={{ fontWeight: 700, color: theme.palette.text.primary, mb: 2, fontSize: { xs: '2rem', md: '3.5rem' } }}
           >
             Find Flexible Part-Time Jobs That Fit You
           </Typography>
           <Typography
             variant="h6"
-            sx={{ color: 'rgba(255,255,255,0.85)', mb: 4, maxWidth: 600, mx: 'auto' }}
+            sx={{ color: theme.palette.text.secondary, mb: 4, maxWidth: 600, mx: 'auto' }}
           >
             Explore thousands of part-time, remote, and on-site opportunities — all tailored for students and professionals.
           </Typography>
@@ -137,9 +156,9 @@ export default function HomePage() {
                 width: '100%',
                 maxWidth: 640,
                 borderRadius: '999px',
-                background: '#fff',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.22)' },
-                '& .MuiInputBase-input': { color: 'black', padding: '14px 16px', fontSize: '1rem' },
+                background: theme.palette.background.paper,
+                '& .MuiOutlinedInput-notchedOutline': { borderColor: theme.palette.divider },
+                '& .MuiInputBase-input': { color: theme.palette.text.primary, padding: '14px 16px', fontSize: '1rem' },
               }}
               InputProps={{
                 startAdornment: (
@@ -152,7 +171,15 @@ export default function HomePage() {
             <Button
               type="submit"
               variant="contained"
-              sx={{ ml: 2, borderRadius: '999px', px: 4, py: 1.5, fontWeight: 700, backgroundColor: theme.palette.primary.main }}
+              sx={{
+                ml: 2,
+                borderRadius: '999px',
+                px: 4,
+                py: 1.5,
+                fontWeight: 700,
+                backgroundColor: theme.palette.primary.main,
+                '&:hover': { backgroundColor: theme.palette.primary.dark },
+              }}
             >
               Search
             </Button>
@@ -160,50 +187,48 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      {/* ===== POPULAR CATEGORIES SECTION (unchanged UI) ===== */}
-      <Box sx={{ py: 10, backgroundColor: '#f9fafb' }}>
+      {/* POPULAR CATEGORIES */}
+      <Box sx={{ py: 10, backgroundColor: theme.palette.mode === 'light' ? theme.palette.background.default : theme.palette.background.paper }}>
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center" justifyContent="space-between">
             <Grid size={{ xs: 12, md: 4 }}>
-              <Box>
-                <Typography variant="h4" fontWeight={800} gutterBottom sx={{ fontSize: { xs: '2rem', md: '2.5rem' }, lineHeight: 1.2 }}>
-                  Discover Jobs That <br />
-                  <Typography component="span" sx={{ color: '#00A884' }}>
-                    Fit Your Lifestyle
-                  </Typography>
+              <Typography variant="h4" fontWeight={800} gutterBottom sx={{ fontSize: { xs: '2rem', md: '2.5rem' }, lineHeight: 1.2 }}>
+                Discover Jobs That <br />
+                <Typography component="span" sx={{ color: theme.palette.primary.main }}>
+                  Fit Your Lifestyle
                 </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mt: 2, fontSize: '1.05rem', lineHeight: 1.7 }}>
-                  Find the perfect part-time opportunities across industries — whether you love tech, teaching, design, or customer service.
-                  Explore flexible roles that match your skills and schedule.
-                </Typography>
-              </Box>
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mt: 2, fontSize: '1.05rem', lineHeight: 1.7 }}>
+                Find the perfect part-time opportunities across industries — whether you love tech, teaching, design, or customer service.
+                Explore flexible roles that match your skills and schedule.
+              </Typography>
             </Grid>
 
-            <Grid  size={{ xs: 12, md: 8 }}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <Grid container spacing={3}>
                 {categories.map((cat, index) => (
-                  <Grid key={index}  size={{ xs: 6, sm: 4, md: 4 }}>
+                  <Grid key={index} size={{ xs: 6, sm: 4, md: 4 }}>
                     <Box
                       sx={{
                         height: 140,
-                        backgroundColor: '#fff',
+                        backgroundColor: theme.palette.background.paper,
                         borderRadius: 4,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                        boxShadow: theme.shadows[2],
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
                         transition: 'all 0.3s ease',
                         '&:hover': {
-                          backgroundColor: '#00A884',
+                          backgroundColor: theme.palette.primary.main,
                           transform: 'translateY(-6px)',
-                          boxShadow: '0 6px 18px rgba(0, 168, 132, 0.4)',
-                          '& .MuiSvgIcon-root': { color: '#fff' },
-                          '& .cat-name': { color: '#fff' },
+                          boxShadow: theme.shadows[6],
+                          '& .MuiSvgIcon-root': { color: theme.palette.common.white },
+                          '& .cat-name': { color: theme.palette.common.white },
                         },
                       }}
                     >
-                      <Box sx={{ mb: 1 }}>{React.cloneElement(cat.icon, { sx: { fontSize: 40, color: '#00A884', transition: 'color 0.3s' } })}</Box>
+                      <Box sx={{ mb: 1 }}>{React.cloneElement(cat.icon, { sx: { fontSize: 40, color: theme.palette.primary.main, transition: 'color 0.3s' } })}</Box>
                       <Typography className="cat-name" variant="subtitle1" fontWeight={600} color="text.primary">
                         {cat.name}
                       </Typography>
@@ -223,10 +248,18 @@ export default function HomePage() {
       <HowItWorkSection />
 
       {/* CTA SECTION */}
-      <Box sx={{ position: 'relative', py: 16, textAlign: 'center', background: 'linear-gradient(135deg, #006b4f, #00A884, #00C9A7)', color: '#fff' }}>
+      <Box sx={{
+        position: 'relative',
+        py: 16,
+        textAlign: 'center',
+        background: theme.palette.mode === 'light'
+          ? `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`
+          : `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+        color: theme.palette.common.white
+      }}>
         <Container maxWidth="sm">
           <Typography variant="h3" fontWeight={800} mb={3}>
-            Get Your <span style={{ color: '#ffffff' }}>Instant Job</span> Today!
+            Get Your <span style={{ color: theme.palette.common.white }}>Instant Job</span> Today!
           </Typography>
           <Typography variant="h6" mb={5}>
             Join <b>Part Time Match</b> now and connect with top employers instantly. Your next opportunity is just a click away!
@@ -235,7 +268,15 @@ export default function HomePage() {
             variant="contained"
             size="large"
             onClick={() => router.push('/register')}
-            sx={{ bgcolor: '#fff', color: '#00A884', fontWeight: 700, px: 8, py: 1.5, borderRadius: '50px' }}
+            sx={{
+              bgcolor: theme.palette.common.white,
+              color: theme.palette.primary.main,
+              fontWeight: 700,
+              px: 8,
+              py: 1.5,
+              borderRadius: '50px',
+              '&:hover': { bgcolor: theme.palette.grey[100] },
+            }}
           >
             🚀 Get Started
           </Button>

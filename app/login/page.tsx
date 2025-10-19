@@ -16,10 +16,12 @@ import FullPageLoader from '@/components/FullPageLoader';
 import Input from '@/components/Input';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@mui/material/styles';
 
 export default function LoginPage() {
   const { login } = useAuthContext();
   const router = useRouter();
+  const theme = useTheme();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +35,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // Optional: redirect handled inside login or post-login page
+      // Optional: redirect handled inside login
     } catch {
       setError('Invalid email or password');
     } finally {
@@ -49,8 +51,12 @@ export default function LoginPage() {
       <Grid
         size={{ xs: 12, md: 6 }}
         sx={{
-          background: 'linear-gradient(135deg, #00A884 0%, #4DD4B0 100%)',
-          color: '#fff',
+          background: theme.palette.mode === 'light'
+            ? 'linear-gradient(135deg, #00A884 0%, #4DD4B0 100%)'
+            : 'linear-gradient(135deg, #004d40 0%, #00796b 100%)',
+          color: theme.palette.getContrastText(
+            theme.palette.mode === 'light' ? '#00A884' : '#004d40'
+          ),
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -84,7 +90,7 @@ export default function LoginPage() {
           alignItems: 'center',
           justifyContent: 'center',
           p: { xs: 4, md: 8 },
-          bgcolor: 'background.default',
+          bgcolor: theme.palette.background.default,
         }}
       >
         <Paper
@@ -94,6 +100,7 @@ export default function LoginPage() {
             maxWidth: 420,
             p: 4,
             borderRadius: 4,
+            bgcolor: theme.palette.background.paper,
           }}
         >
           <Typography
@@ -175,11 +182,11 @@ export default function LoginPage() {
                 borderRadius: 3,
                 py: 1.5,
                 fontWeight: 600,
-                color: '#1E293B',
-                borderColor: '#CBD5E1',
+                color: theme.palette.text.primary,
+                borderColor: theme.palette.divider,
                 '&:hover': {
-                  borderColor: 'primary.main',
-                  color: 'primary.main',
+                  borderColor: theme.palette.primary.main,
+                  color: theme.palette.primary.main,
                 },
               }}
             >

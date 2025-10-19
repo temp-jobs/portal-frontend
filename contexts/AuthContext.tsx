@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
 interface User {
+  avatar: string | undefined;
   _id: string; // 👈 Add this line
   id?: string; // optional fallback for future API consistency
   email: string;
@@ -55,9 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // ✅ Role-based redirect
       if (user.role === 'employer') {
-        router.push(user.profileCompleted ? '/dashboard' : '/onboarding/employer');
+        router.push(user.profileCompleted ? 'em/dashboard' : 'em/onboarding');
       } else if (user.role === 'jobseeker') {
-        router.push(user.profileCompleted ? '/dashboard' : '/onboarding/jobseeker');
+        router.push(user.profileCompleted ? 'jsk/dashboard' : 'jsk/onboarding');
       } else {
         // fallback for undefined roles
         router.push('/');
@@ -108,9 +109,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Redirect based on role
       if (role === 'employer') {
-        router.push('/onboarding/employer');
+        router.push('em/onboarding');
       } else {
-        router.push('/onboarding/jobseeker');
+        router.push('jsk/onboarding');
       }
     } catch (error) {
       throw new Error('Registration failed');

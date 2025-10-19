@@ -43,7 +43,7 @@ export default function JobCard({ job, onDelete, showActions = true }: JobCardPr
           {job.title}
         </Typography>
 
-        <Typography variant="body2" color="text.secondary" gutterBottom>
+        <Typography variant="body2" color="text.primary" gutterBottom>
           {job.location}
         </Typography>
 

@@ -1,10 +1,18 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
-import theme from '../theme';
+import { createAppTheme, Mode } from '../theme';
+import { useColorMode } from '@/contexts/ColorModeContext';
 
-export default function ThemeRegistry({ children }: { children: ReactNode }) {
+interface ThemeRegistryProps {
+  children: ReactNode;
+}
+
+export default function ThemeRegistry({ children }: ThemeRegistryProps) {
+  const { mode } = useColorMode(); // Get current mode from context
+  const theme = useMemo(() => createAppTheme(mode as Mode), [mode]);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
