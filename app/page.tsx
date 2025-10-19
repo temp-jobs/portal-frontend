@@ -283,7 +283,7 @@ export default function HomePage() {
         </Container>
       </Box>
 
-      <Footer />
+      {/* <Footer /> */}
     </>
   );
 }
