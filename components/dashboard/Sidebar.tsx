@@ -19,6 +19,7 @@ import InsightsIcon from '@mui/icons-material/Insights';
 import SearchIcon from '@mui/icons-material/Search';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import PersonIcon from '@mui/icons-material/Person';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 
 export default function Sidebar() {
   const { user } = useAuthContext();
@@ -100,6 +101,13 @@ export default function Sidebar() {
             >
               Analytics
             </Button>
+            <Button
+              startIcon={<CurrencyRupeeIcon />}
+              onClick={() => router.push('/em/wallet')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Wallet
+            </Button>
           </>
         )}
 
@@ -139,6 +147,13 @@ export default function Sidebar() {
               sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
             >
               Profile
+            </Button>
+            <Button
+              startIcon={<CurrencyRupeeIcon />}
+              onClick={() => router.push('/jsk/wallet')}
+              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+            >
+              Wallet
             </Button>
           </>
         )}
