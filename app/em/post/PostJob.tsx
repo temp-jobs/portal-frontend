@@ -84,7 +84,7 @@ export default function PostJobPage() {
       const headers = { Authorization: `Bearer ${token}` };
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/jobs/post-job`, form, { headers });
       alert('Job posted successfully!');
-      router.push('/employer/jobs');
+      router.push('/em/jobs');
     } catch (err) {
       console.error(err);
       alert('Failed to post job.');

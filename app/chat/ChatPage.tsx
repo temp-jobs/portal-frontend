@@ -155,7 +155,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
 
   return (
     <DashboardLayout>
-      <Box sx={{ height: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', p: isMobile ? 1 : 3 }}>
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', p: isMobile ? 1 : 3 }}>
         {/* Header */}
         <Stack direction="row" alignItems="center" spacing={1} mb={2}>
           {isMobile && <IconButton onClick={() => window.history.back()}><ArrowBack /></IconButton>}
@@ -168,12 +168,13 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
         <Paper sx={{
           flex: 1,
           p: 2,
-          overflowY: 'auto',
+          overflowY: 'auto', // Scrolls only 
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
           bgcolor: '#f9fafb',
-          borderRadius: 2
+          borderRadius: 2,
+          minHeight: 0 // Important for flexbox scrolling
         }}>
           <AnimatePresence initial={false}>
             {loading ? (

@@ -92,7 +92,7 @@ export default function JobseekerProfilePage() {
         const data = res.data;
 
         if (!data.profileCompleted) {
-          router.push('/onboarding/jobseeker');
+          router.push('/jsk/onboarding');
           return;
         }
 

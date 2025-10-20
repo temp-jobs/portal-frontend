@@ -22,6 +22,7 @@ import axios from 'axios';
 import { useAuthContext } from '../../../contexts/AuthContext';
 import { Edit as EditIcon, Save as SaveIcon } from '@mui/icons-material';
 import FullPageLoader from '../../../components/FullPageLoader';
+import { useRouter } from 'next/navigation'
 
 interface PostedJob {
   id: string;
@@ -44,7 +45,7 @@ interface EmployerProfile {
 }
 
 export default function EmployerProfilePage() {
-
+  const router = useRouter();
   const { user, token } = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<EmployerProfile[]>([]);
@@ -76,6 +77,11 @@ export default function EmployerProfilePage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const profileData = res.data;
+
+        if (!profileData.profileCompleted) {
+          router.push('/jsk/onboarding');
+          return;
+        }
         setProfile(profileData);
         setPostedJobs(profileData.postedJobs || []);
         setForm({

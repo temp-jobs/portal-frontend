@@ -122,7 +122,7 @@ export default function EmployerOnboardingPage() {
             localStorage.setItem('user', JSON.stringify({ ...user, profileCompleted: true }));
 
             setSuccess(true);
-            setTimeout(() => router.push('/profile/employer'), 1500);
+            setTimeout(() => router.push('/em/dashboard'), 1500);
         } catch (err: any) {
             console.error('❌ Onboarding submission failed:', err);
             setError(err.response?.data?.message || 'Failed to complete onboarding');

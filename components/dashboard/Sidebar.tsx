@@ -49,11 +49,11 @@ export default function Sidebar() {
           fontSize: 28,
         }}
       >
-        {user?.name?.charAt(0).toUpperCase()}
+        {user?.companyName?.charAt(0).toUpperCase()}
       </Avatar>
 
       <Typography variant="subtitle1" fontWeight={600}>
-        {user.name}
+        {isEmployer ? `${user.companyName}` : `${user.name}`}
       </Typography>
       <Typography variant="caption" color="text.secondary" mb={2}>
         {isEmployer ? 'Employer' : 'Job Seeker'}

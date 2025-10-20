@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const theme = useTheme();
 
   return (
-    <Grid container sx={{ minHeight: '100vh', bgcolor: theme.palette.background.default }}>
+    <Grid container sx={{ minHeight: '100vh', overflow: 'hidden', bgcolor: theme.palette.background.default }}>
       {/* Sidebar */}
       <Grid
         size={{ xs: 12, sm: 4, md: 2 }}
@@ -37,10 +37,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
-          overflowY: 'auto',
+          height: '100%',
+          minHeight: 0,
+          overflowY: 'hidden',
         }}
       >
-        <Box flexGrow={1}>{children}</Box>
+        <Box sx={{
+          flex: 1,
+          overflow: 'hidden', // ✅ prevent outer scrolls
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}>{children}</Box>
       </Grid>
     </Grid>
   );

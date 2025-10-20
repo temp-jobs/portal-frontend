@@ -153,7 +153,7 @@ export default function JobseekerOnboarding() {
           severity: 'success',
       });
 
-          setTimeout(() => router.push('/profile/jobseeker'), 1000);
+        setTimeout(() => router.push('/jsk/dashboard'), 1000);
       } catch (err: any) {
           console.error('❌ Jobseeker profile submission failed:', err);
           setSnackbar({
