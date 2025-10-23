@@ -65,6 +65,7 @@ export default function JobseekerDashboard() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [chats, setChats] = useState<ChatPreview[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
@@ -78,13 +79,14 @@ export default function JobseekerDashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [jobsRes, appsRes, chatsRes] = await Promise.all([
+        const [jobsRes, appsRes, chatsRes, matchRes] = await Promise.all([
           axios.get(`${API_URL}/jobs`, { headers }),
           axios.get(`${API_URL}/applications`, { headers }),
           axios.get(`${API_URL}/chats/user`, { headers }),
+          axios.get(`${API_URL}/recommendations/jobseeker`, { headers }),
         ]);
 
-        setJobs(jobsRes.data || []);
+        setJobs(matchRes.data.matches || []);
 
         const appsWithApplied = (appsRes.data || []).map((app: Application) => ({
           ...app,
@@ -93,6 +95,8 @@ export default function JobseekerDashboard() {
         setApplications(appsWithApplied);
 
         setChats(chatsRes.data || []);
+        setMatches(matchRes.data.matches)
+        console.log(matchRes.data)
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       } finally {
@@ -151,13 +155,16 @@ export default function JobseekerDashboard() {
             Recommended Jobs
           </Typography>
           <Grid container spacing={2}>
-            {jobs.map((job) => {
+            {matches.map((match) => {
+              const job = match.job;
+              const matchPercentage = match.matchPercentage;
+
               const appForJob = applications.find(
                 (a) => String(a.job._id) === String(job._id)
               );
               const hasChat = !!(appForJob && (appForJob.chatId || appForJob.chatInitiated));
 
-              if(hasChat) return null;
+              if (hasChat) return null;
 
               const employer =
                 typeof job.employer === 'string'
@@ -166,7 +173,6 @@ export default function JobseekerDashboard() {
 
               return (
                 <Grid size={{ xs: 12, sm: 6 }} key={job._id}>
-                  
                   <Card
                     sx={{
                       borderRadius: 2,
@@ -184,12 +190,8 @@ export default function JobseekerDashboard() {
                           {job.title}
                         </Typography>
                         <Chip
-                          label={job.matchPercentage ? `${job.matchPercentage}% Match` : 'New'}
-                          color={
-                            job.matchPercentage && job.matchPercentage > 80
-                              ? 'success'
-                              : 'default'
-                          }
+                          label={matchPercentage ? `${matchPercentage}% Match` : 'New'}
+                          color={matchPercentage && matchPercentage > 80 ? 'success' : 'default'}
                           size="small"
                         />
                       </Box>
@@ -210,37 +212,10 @@ export default function JobseekerDashboard() {
                     {/* Actions */}
                     <CardActions sx={{ justifyContent: 'space-between' }}>
                       <Button
-                      disabled={hasChat}
+                        disabled={hasChat}
                         size="small"
                         variant="contained"
-                        onClick={async () => {
-                          if (hasChat && appForJob) {
-                            let chatId = appForJob.chatId;
-
-                            if (!chatId && appForJob.chatInitiated) {
-                              try {
-                                const res = await axios.get(
-                                  `${API_URL}/chats/user`,
-                                  { headers }
-                                );
-                                chatId = res.data.chatId;
-                              } catch (err) {
-                                console.error('Failed to fetch chatId:', err);
-                                return;
-                              }
-                            }
-
-                            if (chatId) {
-                              router.push(
-                                `/chat?chatId=${chatId}&userId=${employer._id}&userName=${encodeURIComponent(
-                                  employer.name || ''
-                                )}`
-                              );
-                            }
-                          } else {
-                            router.push(`/jobs/${job._id}`);
-                          }
-                        }}
+                        onClick={() => router.push(`/jobs/${job._id}`)}
                       >
                         {hasChat ? 'Applied & Shortlisted' : 'View & Apply'}
                       </Button>
@@ -248,9 +223,7 @@ export default function JobseekerDashboard() {
                       <Button
                         size="small"
                         variant={savedJobs.has(job._id) ? 'contained' : 'outlined'}
-                        startIcon={
-                          savedJobs.has(job._id) ? <BookmarkIcon /> : <BookmarkBorderIcon />
-                        }
+                        startIcon={savedJobs.has(job._id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
                         onClick={() => toggleSaveJob(job._id)}
                       >
                         {savedJobs.has(job._id) ? 'Saved' : 'Save'}
@@ -261,6 +234,7 @@ export default function JobseekerDashboard() {
               );
             })}
           </Grid>
+
 
           {/* Applications Section */}
           <Typography variant="h6" fontWeight={600} mt={3}>
@@ -286,12 +260,12 @@ export default function JobseekerDashboard() {
                           app.status === 'accepted'
                             ? 'success'
                             : app.status === 'rejected'
-                            ? 'error'
-                            : app.status === 'applied'
-                            ? 'warning'
-                            : app.status === 'shortlisted'
-                            ? 'primary'
-                            : 'default'
+                              ? 'error'
+                              : app.status === 'applied'
+                                ? 'warning'
+                                : app.status === 'shortlisted'
+                                  ? 'primary'
+                                  : 'default'
                         }
                         size="small"
                       />
