@@ -35,8 +35,8 @@ export default function Sidebar() {
       display="flex"
       flexDirection="column"
       alignItems="center"
-      textAlign="center"
-      height="100%"
+      // textAlign="center"
+      // height="100%"
       justifyContent="flex-start"
       sx={{ py: 3 }}
     >
@@ -69,42 +69,42 @@ export default function Sidebar() {
             <Button
               startIcon={<WorkOutlineIcon />}
               onClick={() => router.push('/em/jobs')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               My Jobs
             </Button>
             <Button
               startIcon={<AssignmentIndIcon />}
               onClick={() => router.push('/em/applicants')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Applicants
             </Button>
             <Button
               startIcon={<AddCircleOutlineIcon />}
               onClick={() => router.push('/em/post')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Post a Job
             </Button>
             <Button
               startIcon={<ChatIcon />}
               onClick={() => router.push('/messages')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Messages
             </Button>
             <Button
               startIcon={<InsightsIcon />}
               onClick={() => router.push('/em/analytics')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Analytics
             </Button>
             <Button
               startIcon={<CurrencyRupeeIcon />}
               onClick={() => router.push('/em/wallet')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Wallet
             </Button>
@@ -116,42 +116,42 @@ export default function Sidebar() {
             <Button
               startIcon={<SearchIcon />}
               onClick={() => router.push('jsk/jobs')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Browse Jobs
             </Button>
             <Button
               startIcon={<FavoriteIcon />}
               onClick={() => router.push('jsk/saved-jobs')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Saved Jobs
             </Button>
             <Button
               startIcon={<AssignmentIndIcon />}
               onClick={() => router.push('jsk/applications')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               My Applications
             </Button>
             <Button
               startIcon={<ChatIcon />}
               onClick={() => router.push('/messages')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Messages
             </Button>
             <Button
               startIcon={<PersonIcon />}
               onClick={() => router.push('jsk/profile')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Profile
             </Button>
             <Button
               startIcon={<CurrencyRupeeIcon />}
               onClick={() => router.push('/jsk/wallet')}
-              sx={{ justifyContent: 'flex-start', textTransform: 'none' }}
+              sx={{ justifyContent: 'center', textTransform: 'none' }}
             >
               Wallet
             </Button>

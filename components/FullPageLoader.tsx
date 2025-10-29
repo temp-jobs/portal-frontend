@@ -13,7 +13,7 @@ const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({
   open = true,
 }) => {
   return (
-    <Fade in={open} timeout={400} unmountOnExit>
+    <Fade in={open} timeout={300} unmountOnExit>
       <Box
         sx={{
           position: 'fixed',
@@ -23,22 +23,19 @@ const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: 'rgba(255, 255, 255, 0.85)',
+          bgcolor: (theme) =>
+            theme.palette.mode === 'light'
+              ? 'rgba(255,255,255,0.85)'
+              : 'rgba(17,24,39,0.85)',
           backdropFilter: 'blur(6px)',
-          transition: 'all 0.3s ease-in-out',
         }}
       >
         <CircularProgress
           size={50}
-          thickness={3}
+          thickness={4}
           sx={{
             color: 'primary.main',
-            mb: 3,
-            animation: 'spin 1.2s linear infinite',
-            '@keyframes spin': {
-              '0%': { transform: 'rotate(0deg)' },
-              '100%': { transform: 'rotate(360deg)' },
-            },
+            mb: 2,
           }}
         />
         <Typography
@@ -47,6 +44,7 @@ const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({
           sx={{
             fontFamily: '"Montserrat", sans-serif',
             color: 'text.primary',
+            textAlign: 'center',
           }}
         >
           {message}

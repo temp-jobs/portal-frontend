@@ -16,11 +16,17 @@ import {
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import axios from 'axios';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import EditJobModal from '../jobs/modals/EditJobModal';
 import ViewApplicantsModal from '../jobs/modals/ViewApplicantsModal';
 import { Job } from '@/types/job';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
 
 interface Applicant {
   _id: string;
@@ -44,7 +50,7 @@ interface ChatPreview {
 export default function EmployerDashboard() {
   const { user, token } = useAuthContext();
   const router = useRouter();
-
+  const pathname = usePathname();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +109,7 @@ export default function EmployerDashboard() {
   const handleChat = async (applicantId: string) => {
     try {
       const res = await axios.post(`${API_URL}/employer/dashboard/initiate-chat/${applicantId}`, {}, { headers });
-      router.push(`/chat/${res.data.roomId}`);
+      navigateWithLoader(`/chat/${res.data.roomId}`);
     } catch (err: any) {
       console.error(err);
       alert(err.response?.data?.message || 'Unable to start chat');
@@ -117,6 +123,13 @@ export default function EmployerDashboard() {
       </Box>
     );
   }
+
+  const navigateWithLoader = (path: string) => {
+    if (pathname === path) return; // Prevent redundant navigation
+    setLoading(true);
+    router.push(path);
+    setTimeout(() => setLoading(false), 600);
+  };
 
   if (loading) {
     return (
@@ -154,34 +167,119 @@ export default function EmployerDashboard() {
             ))}
           </Grid>
 
-          {/* Job Listings */}
-          <Typography variant="h6" fontWeight={600} mt={2}>My Job Postings</Typography>
-          <Grid container spacing={2}>
-            {jobs.map((job) => (
-              <Grid size={{ xs: 12, sm: 6 }} key={job._id}>
-                <Card sx={{ borderRadius: 2, boxShadow: 3, display: 'flex', flexDirection: 'column', height: '100%', '&:hover': { boxShadow: 6, transform: 'scale(1.01)', transition: '0.3s' } }}>
-                  <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="center">
-                      <Typography variant="h6" fontWeight={600}>{job.title}</Typography>
-                      <Chip
-                        label={job.status}
-                        color={job.status === 'Closed' ? 'default' : 'success'}
-                        size="small"
-                      />
-                    </Box>
-                    <Typography variant="body2" color="text.primary" mb={1} display="flex" alignItems="center">
-                      <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> {job.location}
-                    </Typography>
-                    <Typography variant="body2" noWrap>{job.description}</Typography>
-                  </CardContent>
-                  <CardActions sx={{ justifyContent: 'space-between' }}>
-                    <Button size="small" variant="contained" onClick={() => setViewApplicantsJob(job)}>View Applicants</Button>
-                    <Button size="small" variant="outlined" onClick={() => setEditJob(job)}>Edit</Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          {/* Job Listings Carousel */}
+          <Typography variant="h6" fontWeight={600} mt={2}>
+            My Job Postings
+          </Typography>
+
+          <Box sx={{ position: 'relative' }}>
+            <Swiper
+              modules={[Navigation, Pagination, Autoplay]}
+              spaceBetween={20}
+              slidesPerView={1.2}
+              navigation
+              pagination={{ clickable: true }}
+              autoplay={{ delay: 4000, disableOnInteraction: false }}
+              breakpoints={{
+                600: { slidesPerView: 1.2 },
+                900: { slidesPerView: 2 },
+              }}
+              style={{
+                paddingBottom: '40px',
+                paddingTop: '10px',
+              }}
+            >
+              {jobs.map((job) => (
+                <SwiperSlide key={job._id}>
+                  <Card
+                    sx={{
+                      borderRadius: 2,
+                      boxShadow: 3,
+                      height: 220,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      p: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': { boxShadow: 6, transform: 'translateY(-4px)' },
+                    }}
+                  >
+                    <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                        <Typography variant="subtitle1" fontWeight={600} noWrap>
+                          {job.title}
+                        </Typography>
+                        <Chip
+                          label={job.status}
+                          color={job.status === 'Closed' ? 'default' : 'success'}
+                          size="small"
+                        />
+                      </Box>
+
+                      <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" mb={1}>
+                        <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
+                        {job.location}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        color="text.primary"
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                        }}
+                      >
+                        {job.description}
+                      </Typography>
+                    </CardContent>
+
+                    <CardActions sx={{ justifyContent: 'space-between', pt: 1 }}>
+                      <Button size="small" variant="contained" onClick={() => setViewApplicantsJob(job)}>
+                        View Applicants
+                      </Button>
+                      <Button size="small" variant="outlined" onClick={() => setEditJob(job)}>
+                        Edit
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            {/* Custom Swiper Navigation Styling */}
+            <style jsx global>{`
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #1976d2;
+      background: white;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    .swiper-button-next::after,
+    .swiper-button-prev::after {
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .swiper-button-next {
+      right: -20px;
+    }
+    .swiper-button-prev {
+      left: -20px;
+    }
+    @media (max-width: 600px) {
+      .swiper-button-next,
+      .swiper-button-prev {
+        display: none;
+      }
+    }
+  `}</style>
+          </Box>
+
         </Grid>
 
         {/* Messages Sidebar */}
@@ -215,7 +313,7 @@ export default function EmployerDashboard() {
                   boxShadow: 2,
                   '&:hover': { boxShadow: 4, bgcolor: 'grey.50', color: 'black' },
                 }}
-                onClick={() => router.push(`/chat?chatId=${chat.chatId}&userId=${chat.partnerId}&userName=${encodeURIComponent(chat.partnerName)}`)}
+                onClick={() => navigateWithLoader(`/chat?chatId=${chat.chatId}&userId=${chat.partnerId}&userName=${encodeURIComponent(chat.partnerName)}`)}
               >
                 <Chip label={chat.unreadCount > 0 ? `${chat.unreadCount} new` : ''} color="primary" size="small" sx={{ mr: 1 }} />
                 <Box sx={{ flexGrow: 1 }}>
@@ -229,7 +327,7 @@ export default function EmployerDashboard() {
         </Grid>
 
         {/* Modals */}
-        <ViewApplicantsModal job={viewApplicantsJob} onClose={() => setViewApplicantsJob(null)} />
+        <ViewApplicantsModal job={viewApplicantsJob} onClose={() => setViewApplicantsJob(null)} open={!!viewApplicantsJob} />
         <EditJobModal job={editJob} onClose={() => setEditJob(null)} onUpdated={() => { }} />
       </Grid>
     </DashboardLayout>

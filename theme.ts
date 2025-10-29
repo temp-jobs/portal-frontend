@@ -84,27 +84,27 @@ export const getDesignTokens = (mode: Mode) => {
       ...common,
       palette: {
         mode: 'light',
-        primary: { main: '#6366F1', light: '#A5B4FC', dark: '#4F46E5', contrastText: '#fff' },
-        secondary: { main: '#34D399', light: '#A7F3D0', dark: '#10B981', contrastText: '#fff' },
-        background: { default: '#FAFAFA', paper: '#FFFFFF' },
-        text: { primary: '#111827', secondary: '#4B5563', disabled: '#6B7280' },
-        divider: '#E5E7EB',
-        error: { main: red.A400 },
-        action: { hover: 'rgba(99,102,241,0.08)' },
+        primary: { main: '#0056D2', light: '#E6F0FF', dark: '#003A99', contrastText: '#fff' },
+        secondary: { main: '#00A884', light: '#CFFFEF', dark: '#00876B', contrastText: '#fff' },
+        background: { default: '#F9FAFB', paper: '#FFFFFF' },
+        text: { primary: '#1E293B', secondary: '#475569', disabled: '#94A3B8' },
+        divider: '#E2E8F0',
+        error: { main: '#DC2626' },
+        action: { hover: 'rgba(0,86,210,0.08)' },
       },
       components: {
         ...common.components,
         MuiButton: {
           styleOverrides: {
             containedPrimary: {
-              background: 'linear-gradient(135deg, #A5B4FC, #6366F1)',
+              background: 'linear-gradient(135deg, #4E8EF7, #0056D2)',
               color: '#fff',
-              '&:hover': { background: 'linear-gradient(135deg, #818CF8, #4F46E5)' },
+              '&:hover': { background: 'linear-gradient(135deg, #2C72EA, #0046B2)' },
             },
             outlinedPrimary: {
-              borderColor: '#6366F1',
-              color: '#6366F1',
-              '&:hover': { background: 'rgba(163,175,252,0.1)' },
+              borderColor: '#0056D2',
+              color: '#0056D2',
+              '&:hover': { background: 'rgba(0,86,210,0.1)' },
             },
           },
         },
@@ -112,36 +112,43 @@ export const getDesignTokens = (mode: Mode) => {
           styleOverrides: {
             root: {
               '& .MuiOutlinedInput-root': {
-                '&:hover fieldset': { borderColor: '#6366F1' },
-                '&.Mui-focused fieldset': { borderColor: '#6366F1', borderWidth: 2 },
+                '&:hover fieldset': { borderColor: '#0056D2' },
+                '&.Mui-focused fieldset': { borderColor: '#0056D2', borderWidth: 2 },
               },
-              '& .MuiInputLabel-root.Mui-focused': { color: '#6366F1' },
+              '& .MuiInputLabel-root.Mui-focused': { color: '#0056D2' },
             },
           },
         },
         MuiAppBar: {
           styleOverrides: {
-            root: { backgroundColor: '#FFFFFF', color: '#111827', borderBottom: '1px solid #E5E7EB' },
+            root: {
+              backgroundColor: '#FFFFFF',
+              color: '#1E293B',
+              borderBottom: '1px solid #E2E8F0',
+            },
           },
         },
         MuiPaper: {
           styleOverrides: {
-            root: { backgroundColor: '#FFFFFF', boxShadow: '0 4px 12px rgba(17,24,39,0.08)' },
+            root: {
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 4px 12px rgba(17,24,39,0.08)',
+            },
           },
         },
         MuiChip: {
           styleOverrides: {
             colorPrimary: {
               '&.MuiChip-filled': {
-                background: '#E0E7FF',
-                color: '#4F46E5',
+                background: '#E6F0FF',
+                color: '#0056D2',
                 '&:hover': { opacity: 0.9 },
               },
             },
             colorSecondary: {
               '&.MuiChip-filled': {
-                background: '#D1FAE5',
-                color: '#10B981',
+                background: '#CFFFEF',
+                color: '#00876B',
                 '&:hover': { opacity: 0.9 },
               },
             },
@@ -151,17 +158,17 @@ export const getDesignTokens = (mode: Mode) => {
     };
   }
 
-  // dark mode (keep same as before)
+  // dark mode
   return {
     ...common,
     palette: {
       mode: 'dark',
-      primary: { main: '#6366F1', light: '#818CF8', dark: '#4F46E5', contrastText: '#fff' },
-      secondary: { main: '#34D399', light: '#6EE7B7', dark: '#10B981', contrastText: '#fff' },
-      background: { default: '#111827', paper: '#1F2937' },
-      text: { primary: '#E5E7EB', secondary: '#9CA3AF', disabled: '#6B7280' },
-      divider: '#374151',
-      error: { main: red.A400 },
+      primary: { main: '#4E8EF7', light: '#6FA8F9', dark: '#0056D2', contrastText: '#fff' },
+      secondary: { main: '#00C59B', light: '#5AF2D0', dark: '#009474', contrastText: '#fff' },
+      background: { default: '#0F172A', paper: '#1E293B' },
+      text: { primary: '#F8FAFC', secondary: '#CBD5E1', disabled: '#64748B' },
+      divider: '#334155',
+      error: { main: '#F87171' },
       action: { hover: 'rgba(255,255,255,0.06)' },
     },
     components: {
@@ -169,14 +176,14 @@ export const getDesignTokens = (mode: Mode) => {
       MuiButton: {
         styleOverrides: {
           containedPrimary: {
-            background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+            background: 'linear-gradient(135deg, #0056D2, #4E8EF7)',
             color: '#fff',
-            '&:hover': { background: 'linear-gradient(135deg, #4F46E5, #6366F1)' },
+            '&:hover': { background: 'linear-gradient(135deg, #0046B2, #2C72EA)' },
           },
           outlinedPrimary: {
-            borderColor: '#6366F1',
-            color: '#6366F1',
-            '&:hover': { background: 'rgba(99,102,241,0.08)' },
+            borderColor: '#4E8EF7',
+            color: '#4E8EF7',
+            '&:hover': { background: 'rgba(78,142,247,0.1)' },
           },
         },
       },
@@ -184,21 +191,28 @@ export const getDesignTokens = (mode: Mode) => {
         styleOverrides: {
           root: {
             '& .MuiOutlinedInput-root': {
-              '&:hover fieldset': { borderColor: '#6366F1' },
-              '&.Mui-focused fieldset': { borderColor: '#6366F1', borderWidth: 2 },
+              '&:hover fieldset': { borderColor: '#4E8EF7' },
+              '&.Mui-focused fieldset': { borderColor: '#4E8EF7', borderWidth: 2 },
             },
-            '& .MuiInputLabel-root.Mui-focused': { color: '#6366F1' },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#4E8EF7' },
           },
         },
       },
       MuiAppBar: {
         styleOverrides: {
-          root: { backgroundColor: '#1F2937', color: '#E5E7EB', borderBottom: '1px solid rgba(255,255,255,0.08)' },
+          root: {
+            backgroundColor: '#1E293B',
+            color: '#F8FAFC',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+          },
         },
       },
       MuiPaper: {
         styleOverrides: {
-          root: { backgroundColor: '#1F2937', boxShadow: '0 4px 12px rgba(0,0,0,0.6)' },
+          root: {
+            backgroundColor: '#1E293B',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+          },
         },
       },
     },

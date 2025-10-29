@@ -204,7 +204,7 @@ export default function PostedJobsPage() {
         </Dialog>
 
         {/* Modals */}
-        <ViewApplicantsModal job={viewApplicantsJob} onClose={() => setViewApplicantsJob(null)} />
+        <ViewApplicantsModal job={viewApplicantsJob} onClose={() => setViewApplicantsJob(null)} open={Boolean(viewApplicantsJob)} />
         <EditJobModal job={editJob} onClose={() => setEditJob(null)} onUpdated={fetchJobs} />
         <ViewJobModal job={viewJob} onClose={() => setViewJob(null)} />
       </Box>

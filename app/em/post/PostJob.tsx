@@ -18,7 +18,7 @@ import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import axios from 'axios';
 
 const jobTypes = ['Full-time', 'Part-time', 'Internship', 'Contract', 'Freelance', 'Remote'];
-const experienceLevels = ['Entry', 'Mid', 'Senior'];
+const experienceLevels = ['Fresher', 'Mid', 'Senior'];
 const salaryTypes = ['Fixed', 'Range', 'Variable'];
 
 export default function PostJobPage() {
@@ -31,7 +31,10 @@ export default function PostJobPage() {
     category: '',
     type: '',
     experienceLevel: '',
-    location: '',
+    location: '', // only pincode
+    remoteOption: false,
+    availability: [{ day: 'Any', startTime: '00:00', endTime: '23:59' }],
+    industry: '',
     salaryType: 'Range',
     minSalary: '',
     maxSalary: '',
@@ -55,7 +58,7 @@ export default function PostJobPage() {
     if (!form.category.trim()) errs.category = 'Category is required';
     if (!form.type) errs.type = 'Job type is required';
     if (!form.experienceLevel) errs.experienceLevel = 'Experience level is required';
-    if (!form.location.trim()) errs.location = 'Location is required';
+    if (!form.location.trim()) errs.location = 'Pincode is required';
     if (form.salaryType !== 'Variable') {
       if (form.minSalary === '') errs.minSalary = 'Min salary is required';
       if (form.maxSalary === '') errs.maxSalary = 'Max salary is required';
@@ -64,20 +67,23 @@ export default function PostJobPage() {
     if (form.openings < 1) errs.openings = 'Openings must be at least 1';
     if (form.skillsRequired.length > 20) errs.skillsRequired = 'Max 20 skills allowed';
     if (form.benefits.length > 20) errs.benefits = 'Max 20 benefits allowed';
-    if (form.deadline && new Date(form.deadline) < new Date()) errs.deadline = 'Deadline must be future date';
+    if (form.deadline && new Date(form.deadline) < new Date()) errs.deadline = 'Deadline must be a future date';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm(prev => ({
+      ...prev,
+      [name]: name === 'type' ? value : value,
+      remoteOption: name === 'type' && value === 'Remote' ? true : prev.remoteOption,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    if (!user || !token) return;
+    if (!validate() || !user || !token) return;
 
     try {
       setLoading(true);
@@ -85,9 +91,9 @@ export default function PostJobPage() {
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/jobs/post-job`, form, { headers });
       alert('Job posted successfully!');
       router.push('/em/jobs');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to post job.');
+      alert(err?.response?.data?.message || 'Failed to post job.');
     } finally {
       setLoading(false);
     }
@@ -96,11 +102,9 @@ export default function PostJobPage() {
   return (
     <DashboardLayout>
       <Box component="form" onSubmit={handleSubmit} sx={{ p: 3 }}>
-        <Typography variant="h5" mb={3}>
-          Post a New Job
-        </Typography>
+        <Typography variant="h5" mb={3}>Post a New Job</Typography>
         <Grid container spacing={2}>
-          {/* Title */}
+          {/* Job Title */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
@@ -144,7 +148,7 @@ export default function PostJobPage() {
             />
           </Grid>
 
-          {/* Type */}
+          {/* Job Type */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               select
@@ -157,13 +161,11 @@ export default function PostJobPage() {
               error={!!errors.type}
               helperText={errors.type}
             >
-              {jobTypes.map(type => (
-                <MenuItem key={type} value={type}>{type}</MenuItem>
-              ))}
+              {jobTypes.map(type => <MenuItem key={type} value={type}>{type}</MenuItem>)}
             </TextField>
           </Grid>
 
-          {/* Experience */}
+          {/* Experience Level */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               select
@@ -176,18 +178,16 @@ export default function PostJobPage() {
               error={!!errors.experienceLevel}
               helperText={errors.experienceLevel}
             >
-              {experienceLevels.map(level => (
-                <MenuItem key={level} value={level}>{level}</MenuItem>
-              ))}
+              {experienceLevels.map(level => <MenuItem key={level} value={level}>{level}</MenuItem>)}
             </TextField>
           </Grid>
 
-          {/* Location */}
+          {/* Pincode */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
               required
-              label="Location"
+              label="Pincode"
               name="location"
               value={form.location}
               onChange={handleChange}
@@ -206,13 +206,11 @@ export default function PostJobPage() {
               value={form.salaryType}
               onChange={handleChange}
             >
-              {salaryTypes.map(type => (
-                <MenuItem key={type} value={type}>{type}</MenuItem>
-              ))}
+              {salaryTypes.map(type => <MenuItem key={type} value={type}>{type}</MenuItem>)}
             </TextField>
           </Grid>
 
-          {/* Min / Max Salary */}
+          {/* Min/Max Salary */}
           {form.salaryType !== 'Variable' && (
             <>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -253,7 +251,7 @@ export default function PostJobPage() {
             />
           </Grid>
 
-          {/* Skills */}
+          {/* Skills Required */}
           <Grid size={{ xs: 12 }}>
             <Autocomplete
               multiple
@@ -314,11 +312,7 @@ export default function PostJobPage() {
               value={form.deadline}
               onChange={(newValue) => setForm(prev => ({ ...prev, deadline: newValue }))}
               slotProps={{
-                textField: {
-                  fullWidth: true,
-                  error: !!errors.deadline,
-                  helperText: errors.deadline,
-                }
+                textField: { fullWidth: true, error: !!errors.deadline, helperText: errors.deadline }
               }}
             />
           </Grid>
@@ -340,7 +334,7 @@ export default function PostJobPage() {
             />
           </Grid>
 
-          {/* Submit */}
+          {/* Submit Button */}
           <Grid size={{ xs: 12 }}>
             <Button type="submit" variant="contained" disabled={loading}>
               {loading ? 'Posting...' : 'Post Job'}
@@ -348,7 +342,6 @@ export default function PostJobPage() {
           </Grid>
         </Grid>
       </Box>
-
     </DashboardLayout>
   );
 }

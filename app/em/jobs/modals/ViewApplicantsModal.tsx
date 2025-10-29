@@ -2,206 +2,156 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Modal,
-  Box,
-  Typography,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Button,
+  Typography,
+  Box,
+  Avatar,
+  LinearProgress,
+  Chip,
   Stack,
+  CircularProgress,
 } from '@mui/material';
 import axios from 'axios';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { Job } from '@/types/job';
-
-interface Experience {
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-interface Education {
-  level: string;
-  institute: string;
-  passingYear: string;
-  marksObtained: string;
-  totalMarks: string;
-  percentage: string;
-  documentUrl: string;
-}
 
 interface Applicant {
   _id: string;
-  name: string;
-  email: string;
-  skills?: string[];
-  experience?: Experience[];
-  education?: Education[];
+  job: string;
+  applicant: {
+    _id: string;
+    name: string;
+    email: string;
+    profileCompleted?: boolean;
+    skills: string[];
+    experience?: { company?: string; position?: string; description?: string }[];
+  };
+  status: string;
+  matchPercentage: number;
+  appliedAt: string;
 }
-
-interface Application {
-  _id: string;
-  applicant: Applicant;
-  status: 'pending' | 'accepted' | 'rejected' | 'shortlisted';
-}
-
-
 
 interface Props {
-  job: Job | null;
+  open: boolean;
   onClose: () => void;
+  job: { _id: string; title?: string } | null;
 }
 
-export default function ViewApplicantsModal({ job, onClose }: Props) {
-  const { token } = useAuthContext();
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-  const headers = { Authorization: `Bearer ${token}` };
+const ViewApplicantsModal: React.FC<Props> = ({ open, onClose, job }) => {
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!job) return;
+    if (!job?._id || !open) return;
 
     const fetchApplicants = async () => {
-      setLoading(true);
       try {
-        const res = await axios.get(`${API_URL}/applications/job/${job._id}`, { headers });
-        setApplications(res.data);
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        const res = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}/applications/job/${job._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setApplicants(res.data || []);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching applicants:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchApplicants();
-  }, [job, token]);
-
-  const updateStatus = async (app: Application, status: 'accepted' | 'rejected' | 'shortlisted') => {
-  try {
-    const res = await axios.put(`${API_URL}/applications/${app._id}/status`, { status }, { headers });
-
-    setApplications(prev =>
-      prev.map(a =>
-        a._id === app._id ? { ...a, status } : a
-      )
-    );
-
-    if (status === 'shortlisted' && res.data.chatId) {
-      router.push(
-        `/chat?userId=${app.applicant._id}&userName=${encodeURIComponent(app.applicant.name)}&chatId=${res.data.chatId}`
-      );
-    }
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+  }, [job?._id, open]);
 
   return (
-    <Modal open={!!job} onClose={onClose}>
-      <Box
-        sx={{
-          p: 3,
-          bgcolor: 'background.paper',
-          margin: 'auto',
-          mt: { xs: 5, md: 10 },
-          borderRadius: 2,
-          width: { xs: '95%', sm: 600, md: 800 },
-          maxHeight: '80vh',
-          overflowY: 'auto',
-        }}
-      >
-        <Typography variant="h6" mb={2}>
-          Applicants for "{job?.title}"
-        </Typography>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle>
+        Applicants for {job?.title ? `"${job.title}"` : 'this job'}
+      </DialogTitle>
 
+      <DialogContent dividers>
         {loading ? (
-          <CircularProgress />
-        ) : applications.length === 0 ? (
-          <Typography>No applicants yet.</Typography>
+          <Box display="flex" justifyContent="center" py={3}>
+            <CircularProgress />
+          </Box>
+        ) : applicants.length === 0 ? (
+          <Typography>No applicants found.</Typography>
         ) : (
-          <List>
-            {applications.map(app => {
-              const a = app.applicant;
-              return (
-                <React.Fragment key={app._id}>
-                  <ListItem alignItems="flex-start">
-                    <ListItemText
-                      primary={`${a.name} (${app.status.toUpperCase()})`}
-                      secondary={
-                        <>
-                          <Typography component="span" variant="body2" display="block">
-                            Email: {a.email}
-                          </Typography>
-                          {a.skills && (
-                            <Typography component="span" variant="body2" display="block">
-                              Skills: {a.skills.join(', ')}
-                            </Typography>
-                          )}
-                          {a.experience &&
-                            a.experience.map((exp, idx) => (
-                              <Typography component="span" variant="body2" display="block" key={idx}>
-                                Experience: {exp.description || `${exp.position} at ${exp.company}`}
-                              </Typography>
-                            ))}
-                          {a.education &&
-                            a.education.map((edu, idx) => (
-                              <Typography component="span" variant="body2" display="block" key={idx}>
-                                Education: {edu.level} ({edu.institute})
-                              </Typography>
-                            ))}
-                        </>
-                      }
-                    />
-                    <Stack spacing={1} direction="column" ml={2}>
-                      {app.status !== 'accepted' && (
-                        <Button
-                          variant="contained"
-                          color="success"
-                          size="small"
-                          onClick={() => updateStatus(app, 'accepted')}
-                        >
-                          Accept
-                        </Button>
-                      )}
-                      {app.status !== 'rejected' && (
-                        <Button
-                          variant="contained"
-                          color="error"
-                          size="small"
-                          onClick={() => updateStatus(app, 'rejected')}
-                        >
-                          Reject
-                        </Button>
-                      )}
-                      {app.status !== 'shortlisted' && (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          size="small"
-                          onClick={() => updateStatus(app, 'shortlisted')}
-                        >
-                          Shortlist & Chat
-                        </Button>
-                      )}
-                    </Stack>
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
-              );
-            })}
-          </List>
+          <Stack spacing={2}>
+            {applicants.map((app) => (
+              <Box
+                key={app._id}
+                sx={{
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  bgcolor: 'background.paper',
+                  boxShadow: 1,
+                }}
+              >
+                <Avatar sx={{ bgcolor: 'primary.main', color: '#fff' }}>
+                  {app.applicant.name?.charAt(0).toUpperCase()}
+                </Avatar>
+
+                <Box flex={1}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {app.applicant.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {app.applicant.email}
+                  </Typography>
+
+                  <Box mt={1}>
+                    {app.applicant.skills?.slice(0, 5).map((skill, idx) => (
+                      <Chip
+                        key={idx}
+                        label={skill}
+                        size="small"
+                        sx={{ mr: 0.5, mb: 0.5 }}
+                      />
+                    ))}
+                  </Box>
+
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    {app.applicant.experience?.[0]?.position
+                      ? `${app.applicant.experience?.[0]?.position} @ ${app.applicant.experience?.[0]?.company || '—'}`
+                      : app.applicant.experience?.[0]?.description || 'No experience details'}
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Applied on {new Date(app.appliedAt).toLocaleDateString()}
+                  </Typography>
+                </Box>
+
+                <Box textAlign="center" width={100}>
+                  <Typography variant="body2" color="text.secondary">
+                    Match
+                  </Typography>
+                  <Typography fontWeight={600}>{app.matchPercentage}%</Typography>
+                  <LinearProgress
+                    variant="determinate"
+                    value={app.matchPercentage}
+                    sx={{ height: 8, borderRadius: 5, mt: 0.5 }}
+                  />
+                </Box>
+              </Box>
+            ))}
+          </Stack>
         )}
-      </Box>
-    </Modal>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose} variant="outlined">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
-}
+};
+
+export default ViewApplicantsModal;

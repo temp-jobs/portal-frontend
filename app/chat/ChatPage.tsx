@@ -44,6 +44,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -85,6 +86,14 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
     const handleMessage = (msg: Message) => {
       if (msg.from === user.id || msg.from === chatPartnerId || msg.to === user.id) {
         setMessages(prev => [...prev, msg]);
+        // Auto-scroll only if user is near bottom
+        const container = messagesContainerRef.current;
+        if (container) {
+          const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+          if (isNearBottom) {
+            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+          }
+        }
       }
     };
     const handleTyping = (typingUserId: string) => {
@@ -142,6 +151,8 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
     socket.emit('sendMessage', payload);
     setNewMessage('');
     socket.emit('stopTyping', chatPartnerId);
+    // Always scroll to bottom after sending
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   };
 
   const handleAddReaction = (messageId: string, emoji: string) => {
@@ -155,9 +166,9 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
 
   return (
     <DashboardLayout>
-      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', p: isMobile ? 1 : 3 }}>
+      <Box sx={{ height: '85vh', display: 'flex', flexDirection: 'column', p: isMobile ? 1 : 3 }}>
         {/* Header */}
-        <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+        <Stack direction="row" alignItems="center" spacing={1} mb={1}>
           {isMobile && <IconButton onClick={() => window.history.back()}><ArrowBack /></IconButton>}
           <Avatar src={chatPartnerAvatar} />
           <Typography variant="h6" sx={{ flex: 1 }}>{chatPartnerName}</Typography>
@@ -165,17 +176,20 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
         </Stack>
 
         {/* Messages */}
-        <Paper sx={{
-          flex: 1,
-          p: 2,
-          overflowY: 'auto', // Scrolls only 
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1,
-          bgcolor: '#f9fafb',
-          borderRadius: 2,
-          minHeight: 0 // Important for flexbox scrolling
-        }}>
+        <Paper
+          ref={messagesContainerRef}
+          sx={{
+            flex: 1, // takes all remaining space
+            p: 2,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            bgcolor: '#f9fafb',
+            borderRadius: 2,
+            minHeight: 0, // important for flex scrolling
+          }}
+        >
           <AnimatePresence initial={false}>
             {loading ? (
               <Typography variant="body2" color="textSecondary">Loading messages...</Typography>
@@ -184,12 +198,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
             ) : messages.map(msg => {
               const isSelf = msg.from === user?.id;
               return (
-                <motion.div
-                  key={msg._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                >
+                <motion.div key={msg._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                   <Box sx={{ display: 'flex', justifyContent: isSelf ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 1 }}>
                     {!isSelf && <Avatar src={chatPartnerAvatar} sx={{ width: 28, height: 28 }} />}
                     <Box sx={{ position: 'relative', maxWidth: '70%' }}>
@@ -200,7 +209,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
                           borderRadius: 2,
                           borderTopLeftRadius: isSelf ? 12 : 0,
                           borderTopRightRadius: isSelf ? 0 : 12,
-                          p: 1.5,
+                          p: 1,
                           wordBreak: 'break-word',
                           boxShadow: 1,
                           cursor: 'pointer'
@@ -215,6 +224,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
                           {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Typography>
                       </Box>
+
                       {/* Reactions */}
                       {msg.reactions && (
                         <Stack direction="row" spacing={0.5} sx={{ mt: 0.5 }}>
@@ -231,13 +241,14 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
                 </motion.div>
               );
             })}
+
           </AnimatePresence>
           <div ref={messagesEndRef} />
         </Paper>
 
         {/* Input */}
-        <Stack direction="row" spacing={1} alignItems="center" mt={1}>
-          <IconButton color="primary" title="Attach file (coming soon)"><AttachFile /></IconButton>
+        <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
+          <IconButton color="primary" title="Attach file"><AttachFile /></IconButton>
           <IconButton color="primary" onClick={toggleEmojiPicker} title="Add emoji"><InsertEmoticon /></IconButton>
           <Popover
             open={Boolean(emojiAnchor)}
@@ -245,13 +256,9 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
             onClose={closeEmojiPicker}
             anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
           >
-            <EmojiPicker
-              onEmojiClick={(emojiData) => {
-                setNewMessage(prev => prev + emojiData.emoji);
-                closeEmojiPicker();
-              }}
-            />
+            <EmojiPicker onEmojiClick={emojiData => { setNewMessage(prev => prev + emojiData.emoji); closeEmojiPicker(); }} />
           </Popover>
+
           <TextField
             fullWidth
             placeholder="Type a message..."
@@ -260,20 +267,12 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
             onKeyDown={e => e.key === 'Enter' && handleSend()}
             variant="outlined"
             size="small"
-            sx={{
-              bgcolor: theme.palette.mode === 'light' ? 'background.paper' : 'background.default',
-              '& .MuiInputBase-input': {
-                color: theme.palette.text.primary, // ensures text uses theme color
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: theme.palette.divider, // consistent border color
-              },
-              borderRadius: 2,
-            }}
+            sx={{ borderRadius: 2 }}
           />
           <Button variant="contained" onClick={handleSend}>Send</Button>
-        </Stack>
+        </Box>
       </Box>
+
     </DashboardLayout>
   );
 };

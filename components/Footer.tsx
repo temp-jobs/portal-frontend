@@ -1,7 +1,18 @@
 'use client';
 
 import React from 'react';
-import { Box, Container, Grid, Typography, Link, Stack, IconButton, TextField, Button, useTheme } from '@mui/material';
+import {
+  Box,
+  Container,
+  Grid,
+  Typography,
+  Link,
+  Stack,
+  IconButton,
+  TextField,
+  Button,
+  useTheme,
+} from '@mui/material';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import FacebookIcon from '@mui/icons-material/Facebook';
@@ -21,12 +32,14 @@ export default function Footer() {
     <Box
       component="footer"
       sx={{
-        bgcolor: theme.palette.background.paper,
+        bgcolor:
+          theme.palette.mode === 'light'
+            ? theme.palette.grey[50]
+            : theme.palette.background.paper,
         color: theme.palette.text.primary,
-        borderTop: '1px solid',
-        borderColor: theme.palette.divider,
-        mt: 12,
-        pt: 10,
+        borderTop: `1px solid ${theme.palette.divider}`,
+        // mt: 12,
+        pt: 5,
         pb: 6,
       }}
     >
@@ -37,19 +50,26 @@ export default function Footer() {
             <Typography variant="h6" fontWeight={700} gutterBottom>
               Company
             </Typography>
-            <Stack spacing={1}>
-              <Link href="/about" underline="hover" color="inherit">
-                About Us
-              </Link>
-              <Link href="/contact" underline="hover" color="inherit">
-                Contact
-              </Link>
-              <Link href="/careers" underline="hover" color="inherit">
-                Careers
-              </Link>
-              <Link href="/team" underline="hover" color="inherit">
-                Team
-              </Link>
+            <Stack spacing={1.2}>
+              {[
+                { label: 'About Us', href: '/about' },
+                { label: 'Contact', href: '/contact' },
+                { label: 'Careers', href: '/careers' },
+                { label: 'Team', href: '/team' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  underline="hover"
+                  color="inherit"
+                  sx={{
+                    transition: 'color 0.2s ease',
+                    '&:hover': { color: theme.palette.primary.main },
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </Stack>
           </Grid>
 
@@ -58,19 +78,26 @@ export default function Footer() {
             <Typography variant="h6" fontWeight={700} gutterBottom>
               Resources
             </Typography>
-            <Stack spacing={1}>
-              <Link href="/blog" underline="hover" color="inherit">
-                Blog
-              </Link>
-              <Link href="/faqs" underline="hover" color="inherit">
-                FAQs
-              </Link>
-              <Link href="/help" underline="hover" color="inherit">
-                Help Center
-              </Link>
-              <Link href="/guides" underline="hover" color="inherit">
-                Guides
-              </Link>
+            <Stack spacing={1.2}>
+              {[
+                { label: 'Blog', href: '/blog' },
+                { label: 'FAQs', href: '/faqs' },
+                { label: 'Help Center', href: '/help' },
+                { label: 'Guides', href: '/guides' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  underline="hover"
+                  color="inherit"
+                  sx={{
+                    transition: 'color 0.2s ease',
+                    '&:hover': { color: theme.palette.primary.main },
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </Stack>
           </Grid>
 
@@ -79,19 +106,26 @@ export default function Footer() {
             <Typography variant="h6" fontWeight={700} gutterBottom>
               Legal
             </Typography>
-            <Stack spacing={1}>
-              <Link href="/privacy" underline="hover" color="inherit">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" underline="hover" color="inherit">
-                Terms of Service
-              </Link>
-              <Link href="/cookies" underline="hover" color="inherit">
-                Cookie Policy
-              </Link>
-              <Link href="/security" underline="hover" color="inherit">
-                Security
-              </Link>
+            <Stack spacing={1.2}>
+              {[
+                { label: 'Privacy Policy', href: '/privacy' },
+                { label: 'Terms of Service', href: '/terms' },
+                { label: 'Cookie Policy', href: '/cookies' },
+                { label: 'Security', href: '/security' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  underline="hover"
+                  color="inherit"
+                  sx={{
+                    transition: 'color 0.2s ease',
+                    '&:hover': { color: theme.palette.primary.main },
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
             </Stack>
           </Grid>
 
@@ -102,75 +136,80 @@ export default function Footer() {
             </Typography>
 
             {/* Newsletter */}
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} >
               <TextField
+                fullWidth
                 placeholder="Your email"
                 size="small"
                 variant="outlined"
+                inputProps={{ 'aria-label': 'Email address' }}
                 sx={{
                   flex: 1,
-                  bgcolor: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.background.default,
+                  bgcolor:
+                    theme.palette.mode === 'light'
+                      ? theme.palette.common.white
+                      : theme.palette.background.default,
                   borderRadius: 1,
                   input: { color: theme.palette.text.primary },
                 }}
               />
-              <Button variant="contained" color="primary" sx={{ px: 3 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{
+                  px: 3,
+                  whiteSpace: 'nowrap',
+                  fontWeight: 600,
+                  boxShadow: 'none',
+                  '&:hover': {
+                    boxShadow: '0 2px 10px rgba(0,86,210,0.2)',
+                  },
+                }}
+              >
                 Subscribe
               </Button>
             </Stack>
 
-            {/* Socials */}
+            {/* Social Icons */}
             <Stack direction="row" spacing={1}>
-              <IconButton
-                href="https://linkedin.com"
-                target="_blank"
-                sx={{
-                  color: socialColors.linkedin.main,
-                  '&:hover': { bgcolor: 'transparent', color: socialColors.linkedin.hover },
-                }}
-              >
-                <LinkedInIcon />
-              </IconButton>
-              <IconButton
-                href="https://twitter.com"
-                target="_blank"
-                sx={{
-                  color: socialColors.twitter.main,
-                  '&:hover': { bgcolor: 'transparent', color: socialColors.twitter.hover },
-                }}
-              >
-                <TwitterIcon />
-              </IconButton>
-              <IconButton
-                href="https://facebook.com"
-                target="_blank"
-                sx={{
-                  color: socialColors.facebook.main,
-                  '&:hover': { bgcolor: 'transparent', color: socialColors.facebook.hover },
-                }}
-              >
-                <FacebookIcon />
-              </IconButton>
-              <IconButton
-                href="https://instagram.com"
-                target="_blank"
-                sx={{
-                  color: socialColors.instagram.main,
-                  '&:hover': { bgcolor: 'transparent', color: socialColors.instagram.hover },
-                }}
-              >
-                <InstagramIcon />
-              </IconButton>
+              {[
+                { href: 'https://linkedin.com', icon: <LinkedInIcon />, color: socialColors.linkedin },
+                { href: 'https://twitter.com', icon: <TwitterIcon />, color: socialColors.twitter },
+                { href: 'https://facebook.com', icon: <FacebookIcon />, color: socialColors.facebook },
+                { href: 'https://instagram.com', icon: <InstagramIcon />, color: socialColors.instagram },
+              ].map((social, i) => (
+                <IconButton
+                  key={i}
+                  href={social.href}
+                  target="_blank"
+                  aria-label={`Visit our ${social.href.split('.')[1]} page`}
+                  sx={{
+                    color: social.color.main,
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                      color: social.color.hover,
+                      transform: 'translateY(-2px)',
+                    },
+                  }}
+                >
+                  {social.icon}
+                </IconButton>
+              ))}
             </Stack>
 
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 2, maxWidth: 240 }}
+            >
               Get our latest updates and offers directly in your inbox.
             </Typography>
           </Grid>
         </Grid>
 
         {/* Divider */}
-        <Box sx={{ borderTop: '1px solid', borderColor: theme.palette.divider, my: 6 }} />
+        <Box sx={{ borderTop: '1px solid', borderColor: theme.palette.divider, my: 3 }} />
 
         {/* Bottom Bar */}
         <Stack
@@ -179,20 +218,29 @@ export default function Footer() {
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           spacing={2}
         >
-          <Typography variant="body2">
+          <Typography variant="body2" color="text.secondary">
             © {new Date().getFullYear()} Part Time Match. All rights reserved.
           </Typography>
 
           <Stack direction="row" spacing={3}>
-            <Link href="/privacy" underline="hover" color="inherit">
-              Privacy
-            </Link>
-            <Link href="/terms" underline="hover" color="inherit">
-              Terms
-            </Link>
-            <Link href="/sitemap" underline="hover" color="inherit">
-              Sitemap
-            </Link>
+            {[
+              { label: 'Privacy', href: '/privacy' },
+              { label: 'Terms', href: '/terms' },
+              { label: 'Sitemap', href: '/sitemap' },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                underline="hover"
+                color="inherit"
+                sx={{
+                  transition: 'color 0.2s ease',
+                  '&:hover': { color: theme.palette.primary.main },
+                }}
+              >
+                {item.label}
+              </Link>
+            ))}
           </Stack>
         </Stack>
       </Container>

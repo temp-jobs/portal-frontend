@@ -18,9 +18,16 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import axios from 'axios';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthContext } from '@/contexts/AuthContext';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+
+// Swiper imports
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 // ---------- Types ----------
 interface Employer {
@@ -58,11 +65,62 @@ interface ChatPreview {
   unreadCount: number;
 }
 
+// ---------- Carousel Card Component ----------
+const JobCard = ({ job, matchPercentage, savedJobs, toggleSaveJob, onClick }: any) => (
+  <Card
+    sx={{
+      borderRadius: 2,
+      p: 2,
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      boxShadow: 3,
+      transition: 'all 0.3s ease',
+      '&:hover': { boxShadow: 6, transform: 'translateY(-4px)' },
+    }}
+  >
+    <CardContent sx={{ pb: 1 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+        <Typography variant="h6" fontWeight={600} noWrap>
+          {job.title}
+        </Typography>
+        {matchPercentage !== undefined && (
+          <Chip
+            label={`${matchPercentage}%`}
+            color={matchPercentage > 80 ? 'success' : 'default'}
+            size="small"
+          />
+        )}
+      </Box>
+      <Typography display="flex" alignItems="center" variant="body2" mb={1} color="text.secondary">
+        <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> {job.location}
+      </Typography>
+      <Typography variant="body2" color="text.primary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {job.description}
+      </Typography>
+    </CardContent>
+    <CardActions sx={{ justifyContent: 'space-between', pt: 1 }}>
+      <Button variant="contained" size="small" onClick={onClick}>
+        View & Apply
+      </Button>
+      <Button
+        size="small"
+        variant={savedJobs.has(job._id) ? 'contained' : 'outlined'}
+        startIcon={savedJobs.has(job._id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+        onClick={() => toggleSaveJob(job._id)}
+      >
+        {savedJobs.has(job._id) ? 'Saved' : 'Save'}
+      </Button>
+    </CardActions>
+  </Card>
+);
+
+// ---------- Jobseeker Dashboard ----------
 export default function JobseekerDashboard() {
   const { user, token } = useAuthContext();
   const router = useRouter();
-
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const pathname = usePathname();
   const [applications, setApplications] = useState<Application[]>([]);
   const [chats, setChats] = useState<ChatPreview[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
@@ -72,31 +130,26 @@ export default function JobseekerDashboard() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const headers = { Authorization: `Bearer ${token}` };
 
-  // ---------- Fetch all dashboard data ----------
   useEffect(() => {
     if (!user || !token) return;
 
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [jobsRes, appsRes, chatsRes, matchRes] = await Promise.all([
-          axios.get(`${API_URL}/jobs`, { headers }),
+        const [appsRes, chatsRes, matchRes] = await Promise.all([
           axios.get(`${API_URL}/applications`, { headers }),
           axios.get(`${API_URL}/chats/user`, { headers }),
           axios.get(`${API_URL}/recommendations/jobseeker`, { headers }),
         ]);
 
-        setJobs(matchRes.data.matches || []);
-
         const appsWithApplied = (appsRes.data || []).map((app: Application) => ({
           ...app,
           status: app.status === 'pending' ? 'applied' : app.status,
         }));
-        setApplications(appsWithApplied);
 
+        setApplications(appsWithApplied);
         setChats(chatsRes.data || []);
-        setMatches(matchRes.data.matches)
-        console.log(matchRes.data)
+        setMatches(matchRes.data.matches || []);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
       } finally {
@@ -107,181 +160,279 @@ export default function JobseekerDashboard() {
     fetchData();
   }, [user, token]);
 
-  // ---------- Save/Unsave job ----------
   const toggleSaveJob = (jobId: string) => {
     setSavedJobs((prev) => {
       const updated = new Set(prev);
       updated.has(jobId) ? updated.delete(jobId) : updated.add(jobId);
       return updated;
     });
-    // TODO: integrate backend save/unsave jobs
   };
 
-  // ---------- UI States ----------
-  if (!user) {
+  if (!user)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <Typography variant="h6">Please login to view dashboard</Typography>
       </Box>
     );
-  }
 
-  if (loading) {
+  const navigateWithLoader = (path: string) => {
+    if (pathname === path) return; // Prevent redundant navigation
+    setLoading(true);
+    router.push(path);
+    setTimeout(() => setLoading(false), 600);
+  };
+
+  if (loading)
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
       </Box>
     );
-  }
 
-  // ---------- Main Render ----------
   return (
     <DashboardLayout>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ height: 'calc(100vh - 32px)' }}>
         {/* Main Section */}
-        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Grid
+          size={{ xs: 12, md: 8 }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+            overflowY: 'auto',
+            pr: 1,
+          }}
+        >
           {/* Welcome Card */}
-          <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'primary.light' }}>
-            <Typography color="text.primary" variant="h5" fontWeight={600}>
+          <Paper sx={{ p: 2, borderRadius: 1 }}>
+            <Typography variant="h5" fontWeight={600}>
               Welcome, {user.name}
             </Typography>
-            <Typography variant="body1" color="text.primary">
+            <Typography variant="body1" color="text.secondary">
               Explore new jobs, track applications, and chat with employers.
             </Typography>
           </Paper>
 
-          {/* Recommended Jobs */}
-          <Typography variant="h6" fontWeight={600}>
-            Recommended Jobs
-          </Typography>
-          <Grid container spacing={2}>
-            {matches.map((match) => {
-              const job = match.job;
-              const matchPercentage = match.matchPercentage;
-
-              const appForJob = applications.find(
-                (a) => String(a.job._id) === String(job._id)
-              );
-              const hasChat = !!(appForJob && (appForJob.chatId || appForJob.chatInitiated));
-
-              if (hasChat) return null;
-
-              const employer =
-                typeof job.employer === 'string'
-                  ? { _id: '', name: job.employer }
-                  : job.employer || { _id: '', name: '' };
-
-              return (
-                <Grid size={{ xs: 12, sm: 6 }} key={job._id}>
-                  <Card
-                    sx={{
-                      borderRadius: 2,
-                      boxShadow: 3,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      height: '100%',
-                      '&:hover': { boxShadow: 6, transform: 'scale(1.01)', transition: '0.3s' },
-                    }}
-                  >
-                    <CardContent>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                        <Typography variant="h6" fontWeight={600}>
-                          {job.title}
-                        </Typography>
-                        <Chip
-                          label={matchPercentage ? `${matchPercentage}% Match` : 'New'}
-                          color={matchPercentage && matchPercentage > 80 ? 'success' : 'default'}
-                          size="small"
-                        />
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        color="text.primary"
-                        mb={1}
-                        display="flex"
-                        alignItems="center"
+          {/* Recommended Jobs Carousel */}
+          {matches.length > 0 && (
+            <Box>
+              <Typography variant="h6" fontWeight={600} mb={1}>
+                Recommended Jobs
+              </Typography>
+              <Box sx={{ position: 'relative' }}>
+                <Swiper
+                  modules={[Navigation, Pagination]}
+                  spaceBetween={20}
+                  slidesPerView={2}
+                  pagination={{ clickable: true }}
+                  navigation
+                  breakpoints={{
+                    600: { slidesPerView: 1.2 },
+                    900: { slidesPerView: 2 },
+                  }}
+                  style={{
+                    paddingBottom: '40px',
+                    paddingTop: '10px',
+                    paddingLeft: '40px',
+                    paddingRight: '40px'
+                  }}
+                >
+                  {matches.map((match: any) => (
+                    <SwiperSlide key={match.job._id}>
+                      <Card
+                        sx={{
+                          borderRadius: 1,
+                          boxShadow: 3,
+                          p: 2,
+                          height: 220,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.3s ease',
+                          '&:hover': { boxShadow: 6, transform: 'translateY(-4px)' },
+                        }}
                       >
-                        <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> {job.location}
-                      </Typography>
-                      <Typography variant="body2" noWrap>
-                        {job.description}
-                      </Typography>
-                    </CardContent>
+                        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
+                          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight={600}
+                              sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            >
+                              {match.job.title}
+                            </Typography>
+                            {match.matchPercentage && (
+                              <Chip
+                                label={`${match.matchPercentage}% Match`}
+                                color={match.matchPercentage > 80 ? 'success' : 'default'}
+                                size="small"
+                              />
+                            )}
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            display="flex"
+                            alignItems="center"
+                            mb={1}
+                          >
+                            <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} />
+                            {match.job.location}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.primary"
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical',
+                            }}
+                          >
+                            {match.job.description || 'No description available.'}
+                          </Typography>
+                        </CardContent>
+                        <CardActions sx={{ justifyContent: 'space-between', pt: 1 }}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => navigateWithLoader(`/jobs/${match.job._id}`)}
+                          >
+                            View & Apply
+                          </Button>
+                          <Button
+                            size="small"
+                            variant={savedJobs.has(match.job._id) ? 'contained' : 'outlined'}
+                            startIcon={
+                              savedJobs.has(match.job._id) ? <BookmarkIcon /> : <BookmarkBorderIcon />
+                            }
+                            onClick={() => toggleSaveJob(match.job._id)}
+                          >
+                            {savedJobs.has(match.job._id) ? 'Saved' : 'Save'}
+                          </Button>
+                        </CardActions>
+                      </Card>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
 
-                    {/* Actions */}
-                    <CardActions sx={{ justifyContent: 'space-between' }}>
-                      <Button
-                        disabled={hasChat}
-                        size="small"
-                        variant="contained"
-                        onClick={() => router.push(`/jobs/${job._id}`)}
-                      >
-                        {hasChat ? 'Applied & Shortlisted' : 'View & Apply'}
-                      </Button>
-
-                      <Button
-                        size="small"
-                        variant={savedJobs.has(job._id) ? 'contained' : 'outlined'}
-                        startIcon={savedJobs.has(job._id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-                        onClick={() => toggleSaveJob(job._id)}
-                      >
-                        {savedJobs.has(job._id) ? 'Saved' : 'Save'}
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-
-
-          {/* Applications Section */}
-          <Typography variant="h6" fontWeight={600} mt={3}>
-            Recent Applications
-          </Typography>
-          {applications.length === 0 ? (
-            <Typography color="text.primary">You haven’t applied to any jobs yet.</Typography>
-          ) : (
-            <Grid container spacing={2}>
-              {applications.map((app) => (
-                <Grid size={{ xs: 12, sm: 6 }} key={app._id}>
-                  <Card sx={{ borderRadius: 2, boxShadow: 2 }}>
-                    <CardContent>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        {app.job.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.primary" gutterBottom>
-                        {app.job.location}
-                      </Typography>
-                      <Chip
-                        label={app.status}
-                        color={
-                          app.status === 'accepted'
-                            ? 'success'
-                            : app.status === 'rejected'
-                              ? 'error'
-                              : app.status === 'applied'
-                                ? 'warning'
-                                : app.status === 'shortlisted'
-                                  ? 'primary'
-                                  : 'default'
-                        }
-                        size="small"
-                      />
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                {/* Custom Navigation Styling */}
+                <style jsx global>{`
+        .swiper-button-next,
+        .swiper-button-prev {
+          color: #1976d2;
+          background: white;
+          border-radius: 50%;
+          padding: 1;
+          width: 25px;
+          height: 25px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+        .swiper-button-next::after,
+        .swiper-button-prev::after {
+          font-size: 14px;
+          font-weight: bold;
+        }
+        .swiper-button-next {
+          right: -20px;
+        }
+        .swiper-button-prev {
+          left: -20px;
+        }
+        @media (max-width: 600px) {
+          .swiper-button-next,
+          .swiper-button-prev {
+            display: none;
+          }
+        }
+      `}</style>
+              </Box>
+            </Box>
           )}
+
+
+          {/* Recent Applications Carousel */}
+          <Box mt={2}>
+            <Typography variant="h6" fontWeight={600} mb={1}>
+              Recent Applications
+            </Typography>
+            {applications.length === 0 ? (
+              <Typography color="text.secondary">You haven’t applied to any jobs yet.</Typography>
+            ) : (
+                <Swiper
+                  modules={[Navigation, Pagination]}
+                  spaceBetween={20}
+                  slidesPerView={3}
+                  navigation
+                  pagination={{ clickable: true }}
+                  breakpoints={{
+                    600: { slidesPerView: 1.5 },
+                    900: { slidesPerView: 2.2 },
+                    1200: { slidesPerView: 3 },
+                  }}
+                  style={{
+                    paddingBottom: '40px',
+                    paddingTop: '10px',
+                    paddingLeft: '40px',
+                    paddingRight: '40px'
+                  }}
+                >
+                  {applications.map((app) => (
+                    <SwiperSlide key={app._id}>
+                      <Card
+                        sx={{
+                          borderRadius: 1,
+                          p: 0.5,
+                          boxShadow: 4,
+                          transition: 'all 0.3s ease',
+                          '&:hover': { boxShadow: 6, transform: 'translateY(-4px)' },
+                          minHeight: '150px'
+                        }}
+                      >
+                        <CardContent>
+                          <Typography variant="subtitle1" fontWeight={700} noWrap>
+                            {app.job.title}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            display="flex"
+                            alignItems="center"
+                            mb={1}
+                          >
+                            <LocationOnIcon fontSize="small" sx={{ mr: 0.5 }} /> {app.job.location}
+                          </Typography>
+                          <Chip
+                            label={app.status}
+                            color={
+                              app.status === 'accepted'
+                                ? 'success'
+                                : app.status === 'rejected'
+                                  ? 'error'
+                                  : app.status === 'applied'
+                                    ? 'warning'
+                                    : app.status === 'shortlisted'
+                                      ? 'primary'
+                                      : 'default'
+                            }
+                            size="small"
+                            sx={{ textTransform: 'capitalize' }}
+                          />
+                        </CardContent>
+                      </Card>
+                    </SwiperSlide>
+                  ))}
+              </Swiper>
+            )}
+          </Box>
         </Grid>
 
         {/* Messages Sidebar */}
         <Grid
           size={{ xs: 12, md: 4 }}
           sx={{
-            bgcolor: '#f5f5f5',
+            bgcolor: 'light',
             borderLeft: '1px solid #e0e0e0',
             p: 2,
             display: { xs: 'none', md: 'flex' },
@@ -295,7 +446,7 @@ export default function JobseekerDashboard() {
           </Typography>
 
           {chats.length === 0 ? (
-            <Typography color="text.primary">No messages yet.</Typography>
+            <Typography color="text.secondary">No messages yet.</Typography>
           ) : (
             chats.map((chat) => (
               <Card
@@ -304,13 +455,13 @@ export default function JobseekerDashboard() {
                   display: 'flex',
                   alignItems: 'center',
                   p: 1.5,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   cursor: 'pointer',
                   boxShadow: 2,
                   '&:hover': { boxShadow: 4, bgcolor: 'grey.50' },
                 }}
                 onClick={() =>
-                  router.push(
+                  navigateWithLoader(
                     `/chat?chatId=${chat.chatId}&userId=${chat.partnerId}&userName=${encodeURIComponent(
                       chat.partnerName
                     )}`
@@ -324,21 +475,14 @@ export default function JobseekerDashboard() {
                   <Typography variant="subtitle2" fontWeight={600}>
                     {chat.partnerName} ({chat.jobTitle})
                   </Typography>
-                  <Typography variant="body2" color="text.primary" noWrap>
+                  <Typography variant="body2" color="text.secondary" noWrap>
                     {chat.lastMessage}
                   </Typography>
                 </Box>
                 <Box display="flex" flexDirection="column" alignItems="flex-end">
-                  <Typography variant="caption" color="text.primary">
-                    {chat.timestamp}
-                  </Typography>
+                  <Typography variant="caption">{chat.timestamp}</Typography>
                   {chat.unreadCount > 0 && (
-                    <Chip
-                      label={chat.unreadCount}
-                      color="primary"
-                      size="small"
-                      sx={{ mt: 0.5 }}
-                    />
+                    <Chip label={chat.unreadCount} color="primary" size="small" sx={{ mt: 0.5 }} />
                   )}
                 </Box>
               </Card>

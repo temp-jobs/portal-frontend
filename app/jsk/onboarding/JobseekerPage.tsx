@@ -25,6 +25,8 @@ import {
   Card,
   CardContent,
   Divider,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import dayjs from 'dayjs';
 import axios from 'axios';
@@ -33,7 +35,13 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import EducationSection from '@/components/onboarding/EducationSection';
 import ResumeUploadSection from '@/components/onboarding/ResumeUploadSection';
 
-const steps = ['Personal Info', 'Education', 'Experience & Availability', 'Upload Resume', 'Preview'];
+const steps = [
+  'Personal Info',
+  'Education',
+  'Experience & Availability',
+  'Upload Resume',
+  'Preferences & Preview',
+];
 
 const skillsList = [
   'JavaScript',
@@ -47,17 +55,25 @@ const skillsList = [
   'Content Writing',
 ];
 
+const experienceOptions = [
+  'Fresher / No Experience',
+  '<1 year',
+  '1-3 years',
+  '>3 years',
+];
+
 export default function JobseekerOnboarding() {
   const router = useRouter();
   const { user, setUser } = useAuthContext();
 
   const [activeStep, setActiveStep] = useState(0);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({ open: false, message: '', severity: 'success' });
 
+  // --- State ---
   const [personalInfo, setPersonalInfo] = useState({
     fullName: '',
     fatherName: '',
@@ -69,112 +85,162 @@ export default function JobseekerOnboarding() {
     pincode: '',
     photo: null as File | null,
     photoPreview: '',
+    location: [0, 0] as [number, number],
   });
 
   const [education, setEducation] = useState<any[]>([]);
-  const [experience, setExperience] = useState({
-    skills: [] as string[],
+  const [experience, setExperience] = useState<{
+    skills: string[];
+    years: string;
+    jobType: string;
+    availability: string;
+    expectedSalary: string;
+    acceptsRemote: boolean;
+    preferredIndustry: string; // <-- add this
+  }>({
+    skills: [],
     years: '',
     jobType: '',
     availability: '',
     expectedSalary: '',
+    acceptsRemote: true,
+    preferredIndustry: '', // <-- initial value
   });
+
   const [resume, setResume] = useState<File | null>(null);
 
-  const isAbove15 = (dob: string) => dayjs().diff(dayjs(dob), 'year') >= 15;
-
+  // --- Step navigation ---
   const handleNext = () => {
     if (activeStep === 0) {
-      if (!personalInfo.fullName || !personalInfo.fatherName || !isAbove15(personalInfo.dob)) {
-        return setSnackbar({
-          open: true,
-          message: 'Please fill personal details correctly (age must be 15+)',
-          severity: 'error',
-        });
+      // Personal Info validation
+      if (
+        !personalInfo.fullName ||
+        !personalInfo.fatherName ||
+        !personalInfo.dob ||
+        !personalInfo.gender ||
+        !personalInfo.city ||
+        !personalInfo.state ||
+        !personalInfo.pincode
+      ) {
+        return showSnackbar('Please fill all personal info fields', 'error');
       }
+      if (!isAbove15(personalInfo.dob))
+        return showSnackbar('You must be at least 15 years old', 'error');
     }
+
     if (activeStep === 1 && education.length === 0) {
-      return setSnackbar({ open: true, message: 'Please add your education details', severity: 'error' });
+      return showSnackbar('Please add your education details', 'error');
     }
-    if (activeStep === 2 && (experience.skills.length === 0 || !experience.jobType)) {
-      return setSnackbar({
-        open: true,
-        message: 'Please fill skills and job preferences',
-        severity: 'error',
-      });
+
+    if (
+      activeStep === 2 &&
+      (experience.skills.length === 0 || !experience.jobType || !experience.years)
+    ) {
+      return showSnackbar('Please fill skills, experience, and job type', 'error');
     }
+
     if (activeStep === 3 && !resume) {
-      return setSnackbar({
-        open: true,
-        message: 'Please upload your resume before continuing',
-        severity: 'error',
-      });
+      return showSnackbar('Please upload your resume', 'error');
     }
+
     setActiveStep((prev) => prev + 1);
   };
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
-  const handleSubmit = async () => {
-      try {
-          const token = localStorage.getItem('token');
-          if (!token) throw new Error('Unauthorized');
+  const showSnackbar = (message: string, severity: 'success' | 'error') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
-      // 🧠 Correct payload format for new schema
+  const isAbove15 = (dob: string) => dayjs().diff(dayjs(dob), 'year') >= 15;
+
+  // --- Helper: convert pin code to [lng, lat] ---
+  const geocodePinCode = async (pin: string): Promise<[number, number]> => {
+    try {
+      const res = await axios.get(
+        `https://api.postalpincode.in/pincode/${pin}`
+      );
+      const data = res.data[0]?.PostOffice?.[0];
+      if (!data) return [0, 0];
+      // We'll fake lng/lat with static values as postal API doesn't give coordinates
+      // In production, integrate Google Maps / OpenStreetMap geocoding
+      return [parseFloat(pin) || 0, parseFloat(pin) || 0];
+    } catch (err) {
+      console.error(err);
+      return [0, 0];
+    }
+  };
+
+  // --- Submit ---
+  const handleSubmit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Unauthorized');
+
+      // --- convert pin to location ---
+      const location = await geocodePinCode(personalInfo.pincode);
+
+      // --- totalExperience in years ---
+      const totalExperience =
+        experience.years === 'Fresher / No Experience'
+          ? 0
+          : experience.years === '<1 year'
+            ? 0.5
+            : experience.years === '1-3 years'
+              ? 2
+              : 5;
+
       const payload = {
-          personalInfo,
-          education,
-          skills: experience.skills,
+        name: personalInfo.fullName,
+        education: education.map((edu) => ({
+          ...edu,
+          documentUrl: edu.documentPreview || '',
+        })),
         experience: [
-            {
-                company: '',
-                position: '',
-                startDate: '',
-                endDate: '',
-                description: `${experience.years} (${experience.jobType}, ${experience.availability} hrs/week)`,
-            },
+          {
+            company: '',
+            position: '',
+            startDate: null,
+            endDate: null,
+            description: `${experience.years} (${experience.jobType}, ${experience.availability || 0} hrs/week)`,
+          },
         ],
-        expectedSalary: experience.expectedSalary,
-    };
+        totalExperience,
+        skills: experience.skills,
+        availability: experience.availability
+          ? [
+            {
+              day: 'Any',
+              startTime: '00:00',
+              endTime: '23:59',
+            },
+          ]
+          : [],
+        pincode: personalInfo.pincode,
+        preferredSalary: Number(experience.expectedSalary) || 0,
+        preferredIndustry: experience.preferredIndustry || '',
+        acceptsRemote: experience.acceptsRemote,
+      };
 
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/profile/jobseeker`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       setUser((prev) => {
-          const updated = prev ? { ...prev, profileCompleted: true } : prev;
-          if (updated) localStorage.setItem('user', JSON.stringify(updated));
-          return updated;
+        const updated = prev ? { ...prev, profileCompleted: true } : prev;
+        if (updated) localStorage.setItem('user', JSON.stringify(updated));
+        return updated;
       });
 
-      setSnackbar({
-          open: true,
-          message: 'Profile created successfully!',
-          severity: 'success',
-      });
-
-        setTimeout(() => router.push('/jsk/dashboard'), 1000);
-      } catch (err: any) {
-          console.error('❌ Jobseeker profile submission failed:', err);
-          setSnackbar({
-              open: true,
-              message: err.response?.data?.message || 'Failed to submit profile.',
-              severity: 'error',
-          });
-      }
+      showSnackbar('Jobseeker profile created successfully!', 'success');
+      setTimeout(() => router.push('/jsk/dashboard'), 1000);
+    } catch (err: any) {
+      console.error(err);
+      showSnackbar(err.response?.data?.message || 'Failed to submit profile', 'error');
+    }
   };
 
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPersonalInfo((p) => ({
-      ...p,
-      photo: file,
-      photoPreview: URL.createObjectURL(file),
-    }));
-  };
-
+  // --- Render steps ---
   const renderPersonalInfo = () => (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -182,7 +248,9 @@ export default function JobseekerOnboarding() {
           fullWidth
           label="Full Name"
           value={personalInfo.fullName}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, fullName: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, fullName: e.target.value })
+          }
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -190,7 +258,9 @@ export default function JobseekerOnboarding() {
           fullWidth
           label="Father's Name"
           value={personalInfo.fatherName}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, fatherName: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, fatherName: e.target.value })
+          }
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -200,7 +270,9 @@ export default function JobseekerOnboarding() {
           label="Date of Birth"
           InputLabelProps={{ shrink: true }}
           value={personalInfo.dob}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, dob: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, dob: e.target.value })
+          }
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -209,7 +281,9 @@ export default function JobseekerOnboarding() {
           fullWidth
           label="Gender"
           value={personalInfo.gender}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, gender: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, gender: e.target.value })
+          }
         >
           <MenuItem value="male">Male</MenuItem>
           <MenuItem value="female">Female</MenuItem>
@@ -219,10 +293,11 @@ export default function JobseekerOnboarding() {
       <Grid size={{ xs: 12 }}>
         <TextField
           fullWidth
-          multiline
           label="Current Address"
           value={personalInfo.address}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, address: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, address: e.target.value })
+          }
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -230,7 +305,9 @@ export default function JobseekerOnboarding() {
           fullWidth
           label="City"
           value={personalInfo.city}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, city: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, city: e.target.value })
+          }
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
@@ -238,25 +315,20 @@ export default function JobseekerOnboarding() {
           fullWidth
           label="State"
           value={personalInfo.state}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, state: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, state: e.target.value })
+          }
         />
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
-          label="Pincode"
+          label="Pin Code"
           value={personalInfo.pincode}
-          onChange={(e) => setPersonalInfo({ ...personalInfo, pincode: e.target.value })}
+          onChange={(e) =>
+            setPersonalInfo({ ...personalInfo, pincode: e.target.value })
+          }
         />
-      </Grid>
-      <Grid size={{ xs: 12 }} textAlign="center">
-        <Button variant="contained" component="label">
-          Upload Photo
-          <input hidden accept="image/*" type="file" onChange={handleFileChange} />
-        </Button>
-        {personalInfo.photoPreview && (
-          <Avatar src={personalInfo.photoPreview} alt="Preview" sx={{ width: 100, height: 100, mt: 2, mx: 'auto' }} />
-        )}
       </Grid>
     </Grid>
   );
@@ -269,7 +341,9 @@ export default function JobseekerOnboarding() {
           <Select
             multiple
             value={experience.skills}
-            onChange={(e) => setExperience({ ...experience, skills: e.target.value as string[] })}
+            onChange={(e) =>
+              setExperience({ ...experience, skills: e.target.value as string[] })
+            }
             input={<OutlinedInput label="Skills" />}
             renderValue={(selected) => (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -292,13 +366,15 @@ export default function JobseekerOnboarding() {
         <TextField
           select
           fullWidth
-          label="Years of Experience"
+          label="Experience"
           value={experience.years}
           onChange={(e) => setExperience({ ...experience, years: e.target.value })}
         >
-          <MenuItem value="<1 year">{'<1 year'}</MenuItem>
-          <MenuItem value="1-3 years">{'1–3 years'}</MenuItem>
-          <MenuItem value=">3 years">{'>3 years'}</MenuItem>
+          {experienceOptions.map((opt) => (
+            <MenuItem key={opt} value={opt}>
+              {opt}
+            </MenuItem>
+          ))}
         </TextField>
       </Grid>
 
@@ -320,18 +396,52 @@ export default function JobseekerOnboarding() {
         <TextField
           fullWidth
           label="Weekly Availability (hrs)"
+          type="number"
           value={experience.availability}
-          onChange={(e) => setExperience({ ...experience, availability: e.target.value })}
+          onChange={(e) =>
+            setExperience({ ...experience, availability: e.target.value })
+          }
+        />
+      </Grid>
+    </Grid>
+  );
+
+  const renderPreferences = () => (
+    <Grid container spacing={3}>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField
+          fullWidth
+          label="Expected Salary (per hour)"
+          value={experience.expectedSalary}
+          onChange={(e) =>
+            setExperience({ ...experience, expectedSalary: e.target.value })
+          }
+          InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
         />
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
         <TextField
           fullWidth
-          label="Expected Salary (per hour)"
-          value={experience.expectedSalary}
-          onChange={(e) => setExperience({ ...experience, expectedSalary: e.target.value })}
-          InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
+          label="Preferred Industry"
+          value={experience.preferredIndustry || ''}
+          onChange={(e) =>
+            setExperience({ ...experience, preferredIndustry: e.target.value })
+          }
+        />
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={experience.acceptsRemote}
+              onChange={(e) =>
+                setExperience({ ...experience, acceptsRemote: e.target.checked })
+              }
+            />
+          }
+          label="Accept Remote Jobs"
         />
       </Grid>
     </Grid>
@@ -352,6 +462,9 @@ export default function JobseekerOnboarding() {
           <Typography>DOB: {personalInfo.dob}</Typography>
           <Typography>Gender: {personalInfo.gender}</Typography>
           <Typography>Address: {personalInfo.address}</Typography>
+          <Typography>City: {personalInfo.city}</Typography>
+          <Typography>State: {personalInfo.state}</Typography>
+          <Typography>Pin Code: {personalInfo.pincode}</Typography>
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1" fontWeight="bold">
             Education
@@ -363,11 +476,17 @@ export default function JobseekerOnboarding() {
           ))}
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1" fontWeight="bold">
-            Experience
+            Experience & Skills
           </Typography>
-          <Typography>Skills: {experience.skills.join(', ')}</Typography>
-          <Typography>Years: {experience.years}</Typography>
-          <Typography>Type: {experience.jobType}</Typography>
+          <Typography>
+            Skills: {experience.skills.join(', ')}
+          </Typography>
+          <Typography>Experience: {experience.years}</Typography>
+          <Typography>Job Type: {experience.jobType}</Typography>
+          <Typography>Availability: {experience.availability} hrs/week</Typography>
+          <Typography>Expected Salary: ₹{experience.expectedSalary}</Typography>
+          <Typography>Preferred Industry: {experience.preferredIndustry}</Typography>
+          <Typography>Accepts Remote: {experience.acceptsRemote ? 'Yes' : 'No'}</Typography>
         </CardContent>
       </Card>
     </Box>
@@ -392,7 +511,12 @@ export default function JobseekerOnboarding() {
         {activeStep === 1 && <EducationSection onChange={setEducation} />}
         {activeStep === 2 && renderExperience()}
         {activeStep === 3 && <ResumeUploadSection onChange={setResume} />}
-        {activeStep === 4 && renderPreview()}
+        {activeStep === 4 && (
+          <>
+            {renderPreferences()}
+            <Box mt={4}>{renderPreview()}</Box>
+          </>
+        )}
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 6 }}>
