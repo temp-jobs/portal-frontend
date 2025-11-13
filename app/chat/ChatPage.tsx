@@ -214,10 +214,10 @@ const ChatPage: React.FC<ChatPageProps> = ({ chatPartnerId, chatPartnerName, cha
                           boxShadow: 1,
                           cursor: 'pointer'
                         }}
-                        onClick={() => {
+                        {/* onClick={() => {
                           const emoji = prompt('React with emoji:');
                           if (emoji) handleAddReaction(msg._id, emoji);
-                        }}
+                        }} */}
                       >
                         <Typography variant="body1">{msg.content}</Typography>
                         <Typography variant="caption" sx={{ display: 'block', textAlign: 'right', mt: 0.5, color: isSelf ? 'rgba(255,255,255,0.7)' : 'gray' }}>
