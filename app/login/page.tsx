@@ -44,6 +44,15 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       setUser(data.user);
 
+      if(data.user.profileCompleted === false) {
+        if (data.user.role === 'employer') {
+          router.push('/em/onboarding');}
+        else {
+          router.push('/jsk/onboarding');
+        }
+        return;
+      }
+
       if (data.user.role === 'employer') {
         router.push('/em/dashboard');
       } else {
