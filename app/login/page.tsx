@@ -10,16 +10,20 @@ import {
   Paper,
   Divider,
   CircularProgress,
+  useTheme,
+  ToggleButton,
+  ToggleButtonGroup,
+
 } from '@mui/material';
-import GoogleIcon from '@mui/icons-material/Google';
 import FullPageLoader from '@/components/FullPageLoader';
 import Input from '@/components/Input';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useTheme } from '@mui/material/styles';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import axios from 'axios';
 
 export default function LoginPage() {
-  const { login } = useAuthContext();
+  const { login, setUser } = useAuthContext();
   const router = useRouter();
   const theme = useTheme();
 
@@ -34,14 +38,52 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
-      // Optional: redirect handled inside login
+      const data = await login(email, password);
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+
+      if (data.user.role === 'employer') {
+        router.push('/em/dashboard');
+      } else {
+        router.push('/jsk/dashboard');
+      }
     } catch {
       setError('Invalid email or password');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
+  if (!credentialResponse.credential) return setError('Google login failed');
+  
+  setLoading(true);
+  try {
+    const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
+      token: credentialResponse.credential,
+    });
+
+    const { token, user } = res.data;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    setUser(user);
+
+    if (user.role === 'employer') {
+      router.push(user.profileCompleted ? '/em/dashboard' : '/em/onboarding');
+    } else {
+      router.push(user.profileCompleted ? '/jsk/dashboard' : '/jsk/onboarding');
+    }
+  } catch (err: any) {
+    setError(err?.response?.data?.message || 'Google login failed');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   if (loading) return <FullPageLoader message="Logging you in..." />;
 
@@ -64,12 +106,8 @@ export default function LoginPage() {
         <Typography variant="h3" fontWeight={800} mb={3}>
           Welcome Back
         </Typography>
-        <Typography
-          variant="h6"
-          sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}
-        >
-          Log in to access personalized job matches, apply faster, and manage
-          your professional profile.
+        <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 420 }}>
+          Log in to access personalized job matches, apply faster, and manage your professional profile.
         </Typography>
         <Typography variant="body1" sx={{ opacity: 0.85 }}>
           ✔ Save your favorite jobs <br />
@@ -99,12 +137,7 @@ export default function LoginPage() {
             bgcolor: theme.palette.background.paper,
           }}
         >
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            mb={3}
-            textAlign="center"
-          >
+          <Typography variant="h4" fontWeight={700} mb={3} textAlign="center">
             Log In to Your Account
           </Typography>
 
@@ -153,55 +186,20 @@ export default function LoginPage() {
               fullWidth
               size="large"
               disabled={loading}
-              sx={{
-                mt: 1,
-                borderRadius: 3,
-                py: 1.5,
-                fontWeight: 600,
-              }}
+              sx={{ mt: 1, borderRadius: 3, py: 1.5, fontWeight: 600 }}
             >
-              {loading ? (
-                <CircularProgress size={26} sx={{ color: 'white' }} />
-              ) : (
-                'Log In'
-              )}
+              {loading ? <CircularProgress size={26} sx={{ color: 'white' }} /> : 'Log In'}
             </Button>
 
             <Divider sx={{ my: 3 }}>or</Divider>
 
-            <Button
-              variant="outlined"
-              fullWidth
-              size="large"
-              startIcon={<GoogleIcon />}
-              sx={{
-                borderRadius: 3,
-                py: 1.5,
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.divider,
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                },
-              }}
-            >
-              Continue with Google
-            </Button>
+            <GoogleLogin onSuccess={handleGoogleLogin} onError={() => setError('Google login failed')} />
 
-            <Typography
-              variant="body2"
-              textAlign="center"
-              sx={{ mt: 3 }}
-            >
+            <Typography variant="body2" textAlign="center" sx={{ mt: 3 }}>
               Don’t have an account?{' '}
               <Box
                 component="span"
-                sx={{
-                  color: 'primary.main',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                sx={{ color: theme.palette.primary.main, fontWeight: 600, cursor: 'pointer' }}
                 onClick={() => router.push('/register')}
               >
                 Sign up

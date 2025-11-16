@@ -8,11 +8,11 @@ import {
   Button,
   Alert,
   Paper,
-  ToggleButtonGroup,
-  ToggleButton,
   Divider,
   CircularProgress,
   useTheme,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -20,20 +20,22 @@ import Input from '../../components/Input';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import FullPageLoader from '@/components/FullPageLoader';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import axios from 'axios';
 
 export default function RegisterPage() {
   const theme = useTheme();
-  const { register } = useAuthContext();
+  const { register, user, setUser } = useAuthContext();
   const router = useRouter();
 
-  const [name, setName] = useState<string>('');
-  const [companyName, setCompanyName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
+  const [name, setName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [email, setEmail] = useState('');
   const [role, setRole] = useState<'jobseeker' | 'employer'>('jobseeker');
-  const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,9 +49,18 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const displayName = role === 'jobseeker' ? name : companyName;
-      await register(displayName, email, password, role);
-    } catch {
-      setError('Registration failed. Please try again.');
+      const data = await register(displayName, email, password, role);
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      if (role === 'employer') {
+        router.push(data.user.profileCompleted ? '/em/dashboard' : '/em/onboarding');
+      } else {
+        router.push(data.user.profileCompleted ? '/jsk/dashboard' : '/jsk/onboarding');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -61,6 +72,42 @@ export default function RegisterPage() {
   ) => {
     if (newRole) setRole(newRole);
   };
+
+  const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
+  if (!credentialResponse.credential) {
+    setError('Google login failed');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
+      token: credentialResponse.credential,
+      role, // only needed for first-time signup
+    });
+
+    const { token, user } = res.data; // destructure token and user from response
+
+    // Store in localStorage
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    // Update context
+    setUser(user);
+
+    // Redirect based on role
+    if (user.role === 'employer') {
+      router.push(user.profileCompleted ? '/em/dashboard' : '/em/onboarding');
+    } else {
+      router.push(user.profileCompleted ? '/jsk/dashboard' : '/jsk/onboarding');
+    }
+  } catch (err: any) {
+    console.error('Google login failed', err);
+    setError(err?.response?.data?.message || 'Google login failed');
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (loading) return <FullPageLoader message="Signing you up..." />;
 
@@ -123,41 +170,52 @@ export default function RegisterPage() {
             Create Your Account
           </Typography>
 
-          {/* Role Selection */}
           <ToggleButtonGroup
-            value={role}
-            exclusive
-            fullWidth
-            onChange={handleRoleChange}
-            sx={{
-              mb: 3,
-              '& .MuiToggleButton-root': {
-                borderRadius: 3,
-                textTransform: 'none',
-                fontWeight: 600,
-                p: 1.5,
-                color: theme.palette.text.primary,
-                borderColor: theme.palette.divider,
-                '&.Mui-selected': {
-                  backgroundColor: theme.palette.primary.main,
-                  color: theme.palette.common.white,
-                  '&:hover': {
-                    backgroundColor: theme.palette.primary.dark,
-                  },
-                },
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover,
-                },
-              },
-            }}
-          >
-            <ToggleButton value="jobseeker">
-              <PersonOutlineIcon sx={{ mr: 1 }} /> Job Seeker
-            </ToggleButton>
-            <ToggleButton value="employer">
-              <BusinessCenterIcon sx={{ mr: 1 }} /> Employer
-            </ToggleButton>
-          </ToggleButtonGroup>
+  value={role}
+  exclusive
+  fullWidth
+  onChange={handleRoleChange}
+  sx={{
+    mb: 3,
+    gap: 1,
+    '& .MuiToggleButton-root': {
+      flex: 1,
+      borderRadius: 3, 
+      textTransform: 'none',
+      fontWeight: 600,
+      fontSize: '1rem',
+      padding: '10px 14px',
+      border: `1px solid ${theme.palette.divider}`,
+      color: theme.palette.text.primary,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 1,
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        backgroundColor: theme.palette.action.hover,
+      },
+      '&.Mui-selected': {
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.common.white,
+        borderRadius: 3, // fully rounded both sides
+        boxShadow: theme.shadows[3],
+        '&:hover': {
+          backgroundColor: theme.palette.primary.dark,
+        },
+      },
+    },
+  }}
+>
+  <ToggleButton value="jobseeker">
+    <PersonOutlineIcon fontSize="small" />
+    Job Seeker
+  </ToggleButton>
+  <ToggleButton value="employer">
+    <BusinessCenterIcon fontSize="small" />
+    Employer
+  </ToggleButton>
+</ToggleButtonGroup>
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -217,44 +275,20 @@ export default function RegisterPage() {
               fullWidth
               size="large"
               disabled={loading}
-              sx={{
-                mt: 3,
-                borderRadius: 3,
-                py: 1.5,
-                fontWeight: 600,
-              }}
+              sx={{ mt: 3, borderRadius: 3, py: 1.5, fontWeight: 600 }}
             >
-              {loading ? (
-                <CircularProgress size={26} sx={{ color: 'white' }} />
-              ) : (
-                'Register'
-              )}
+              {loading ? <CircularProgress size={26} sx={{ color: 'white' }} /> : 'Register'}
             </Button>
 
             <Divider sx={{ my: 3 }}>or</Divider>
 
-            <Button
-              variant="outlined"
-              fullWidth
-              size="large"
-              sx={{
-                borderRadius: 3,
-                py: 1.5,
-                fontWeight: 600,
-              }}
-            >
-              Continue with Google
-            </Button>
+            <GoogleLogin onSuccess={handleGoogleLogin} onError={() => setError('Google login failed')} />
 
             <Typography variant="body2" textAlign="center" sx={{ mt: 3 }}>
               Already have an account?{' '}
               <Box
                 component="span"
-                sx={{
-                  color: theme.palette.primary.main,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                sx={{ color: theme.palette.primary.main, fontWeight: 600, cursor: 'pointer' }}
                 onClick={() => router.push('/login')}
               >
                 Login
